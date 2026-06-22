@@ -28,16 +28,35 @@ def nearest_brand(rgb, _cache={}):
     return best
 
 
+# How hard to push colors toward the brand palette.
+# 1.0 = snap fully to nearest brand color (high contrast, dark).
+# Lower = keep more of the original color/brightness (softer, brighter).
+TINT = 0.5
+
+
+def tinted(rgb, _cache={}):
+    """Blend a color partway toward its nearest brand color (see TINT)."""
+    if rgb in _cache:
+        return _cache[rgb]
+    br, bg, bb = nearest_brand(rgb)
+    r, g, b = rgb
+    out = (int(r + (br - r) * TINT),
+           int(g + (bg - g) * TINT),
+           int(b + (bb - b) * TINT))
+    _cache[rgb] = out
+    return out
+
+
 def remap_base(orig256):
-    """Map each of the 256 base colors to its nearest brand color."""
-    return [nearest_brand(c) for c in orig256]
+    """Tint each of the 256 base colors toward brand."""
+    return [tinted(c) for c in orig256]
 
 
 def remap_playpal_lump(raw):
-    """Remap every color in the full PLAYPAL lump (all 14 sub-palettes)."""
+    """Tint every color in the full PLAYPAL lump (all 14 sub-palettes)."""
     out = bytearray(len(raw))
     for i in range(len(raw) // 3):
         r, g, b = raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]
-        nr, ng, nb = nearest_brand((r, g, b))
+        nr, ng, nb = tinted((r, g, b))
         out[i * 3], out[i * 3 + 1], out[i * 3 + 2] = nr, ng, nb
     return bytes(out)
