@@ -434,16 +434,29 @@ SKILL_NAMES = {
     "M_ULTRA": "Over-Privileged",
     "M_NMARE": "Full Admin",
 }
+# Episode-menu graphics -> Token-flavored parody of the Doom episode titles
+EPISODE_NAMES = {
+    "M_EPI1": "Knee-Deep in the NHIs",
+    "M_EPI2": "The Shores of Shadow AI",
+    "M_EPI3": "Agent Inferno",
+    "M_EPI4": "Thy Tokens Consumed",
+}
+
+
+def _text_lump(lump, text, size):
+    green = pal.hex_rgb("#17d079")
+    f = load_font(size)
+    tw, th = text_wh(text, f)
+    img = Image.new("RGBA", (tw + 8, th + 8), (0, 0, 0, 0))
+    ImageDraw.Draw(img).text((4, 2), text, fill=green + (255,), font=f)
+    save_plain(img, lump, GRAPHICS)
 
 
 def build_menu():
-    green = pal.hex_rgb("#17d079")
     for lump, text in SKILL_NAMES.items():
-        f = load_font(18)
-        tw, th = text_wh(text, f)
-        img = Image.new("RGBA", (tw + 8, th + 8), (0, 0, 0, 0))
-        ImageDraw.Draw(img).text((4, 2), text, fill=green + (255,), font=f)
-        save_plain(img, lump, GRAPHICS)
+        _text_lump(lump, text, 18)
+    for lump, text in EPISODE_NAMES.items():
+        _text_lump(lump, text, 18)
 
 
 def main():
@@ -480,7 +493,7 @@ def main():
 
     print("Menu:")
     build_menu()
-    print(f"  {len(SKILL_NAMES)} difficulty labels")
+    print(f"  {len(SKILL_NAMES)} difficulty + {len(EPISODE_NAMES)} episode labels")
 
     print("Done.")
 

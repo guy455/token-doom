@@ -13,8 +13,8 @@ Episode 1, no new levels. Runs on GZDoom. Rudimentary on purpose.
 
 No install. Download, unzip, double-click.
 
-- **Windows** → [token-doom-windows.zip](https://github.com/guy455/token-doom/releases/download/v0.5/token-doom-windows.zip) → run `Play.bat`
-- **macOS** (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/download/v0.5/token-doom-macos.zip) → run `Play.command`
+- **Windows** → [token-doom-windows.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-windows.zip) → run `Play.bat`
+- **macOS** (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-macos.zip) → run `Play.command`
 
 Everything is bundled: the engine, the game data, and the mod. Latest builds are
 always on the [releases page](https://github.com/guy455/token-doom/releases/latest).
