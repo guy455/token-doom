@@ -1,0 +1,38 @@
+[enu default]
+
+// ---- Weapon names (shown in HUD / slot tags) ----
+TAG_FIST = "Finder";
+TAG_PISTOL = "Secret Scanner";
+TAG_SHOTGUN = "Owner Establisher";
+TAG_CHAINGUN = "Campaign Creator";
+TAG_ROCKETLAUNCHER = "Playbook Launcher";
+TAG_PLASMARIFLE = "Auto Remediator";
+TAG_BFG9000 = "Enzo";
+
+// ---- Weapon pickup messages ----
+GOTSHOTGUN = "You got the Owner Establisher!";
+GOTCHAINGUN = "You got the Campaign Creator!";
+GOTLAUNCHER = "You got the Playbook Launcher!";
+GOTPLASMA = "You got the Auto Remediator!";
+GOTBFG9000 = "You got Enzo. Oh, yes.";
+
+// ---- Ammo pickups ----
+GOTCLIP = "Picked up a Secret-scan clip.";
+GOTCLIPBOX = "Picked up Graph queries.";
+GOTCELL = "Picked up a Remediation charge.";
+GOTCELLBOX = "Picked up MCP tokens.";
+GOTBACKPACK = "Picked up a coverage backpack.";
+
+// ---- Health pickups ----
+GOTHTHBONUS = "Picked up Discovery cycles.";
+GOTSTIM = "Orphan decommissioned. +10";
+GOTMEDIKIT = "Identity remediated. +25";
+GOTMEDINEED = "Identity remediated. +25";
+GOTSUPER = "Posture restored.";
+GOTMSPHERE = "Full coverage. Health maxed.";
+
+// ---- Armor pickups ----
+GOTARMOR = "Picked up Least-Privilege plating.";
+GOTMEGA = "Picked up Zero-Trust shielding.";
+GOTARMBONUS = "Picked up Ownership armor.";
+// unused alt: "Picked up a Posture vest."
