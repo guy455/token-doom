@@ -1,0 +1,5 @@
+# Keep Unix line endings on shell launchers so macOS doesn't choke on CRLF
+*.command text eol=lf
+*.sh text eol=lf
+# Windows batch stays CRLF
+*.bat text eol=crlf
