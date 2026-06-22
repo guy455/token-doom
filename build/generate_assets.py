@@ -217,84 +217,130 @@ def tint_mask(mask_img, rgb):
     return solid
 
 
-# crack lines as fractions of the face, drawn from damage tier 1 upward
+# bold jagged cracks as fraction-of-face polylines (drawn from tier 1 up)
 _CRACKS = [
-    [(0.50, 0.06), (0.55, 0.50)],
-    [(0.55, 0.50), (0.95, 0.56)],
-    [(0.05, 0.50), (0.50, 0.55)],
-    [(0.50, 0.55), (0.38, 0.95)],
-    [(0.56, 0.50), (0.72, 0.95)],
+    [(0.50, 0.03), (0.45, 0.24), (0.55, 0.40)],
+    [(0.55, 0.40), (0.80, 0.30), (0.97, 0.42)],
+    [(0.45, 0.24), (0.18, 0.16), (0.03, 0.28)],
+    [(0.55, 0.40), (0.49, 0.70), (0.40, 0.98)],
+    [(0.55, 0.40), (0.72, 0.68), (0.78, 0.98)],
 ]
+
+# face palette
+_GREEN = pal.hex_rgb("#17d079")
+_LIME = pal.hex_rgb("#cff851")
+_CREAM = pal.hex_rgb("#f5f4ea")
+_INK = pal.hex_rgb("#0e1914")
+_PINK = pal.hex_rgb("#f3bfbf")
+_BLUE = pal.hex_rgb("#809cff")
+_BG = pal.hex_rgb("#03251e")
+
+
+def _brows(d, mode, by=16, ex1=48, ex2=80):
+    w, ink = 6, _INK + (255,)
+    if mode == "angry":
+        d.line([ex1 - 15, by - 7, ex1 + 13, by + 5], fill=ink, width=w)
+        d.line([ex2 - 13, by + 5, ex2 + 15, by - 7], fill=ink, width=w)
+    elif mode == "sad":
+        d.line([ex1 - 13, by + 6, ex1 + 15, by - 6], fill=ink, width=w)
+        d.line([ex2 - 15, by - 6, ex2 + 13, by + 6], fill=ink, width=w)
+    elif mode == "happy":
+        d.arc([ex1 - 14, by - 6, ex1 + 14, by + 12], 180, 360, fill=ink, width=w)
+        d.arc([ex2 - 14, by - 6, ex2 + 14, by + 12], 180, 360, fill=ink, width=w)
+    elif mode == "surprised":
+        d.line([ex1 - 13, by - 6, ex1 + 13, by - 6], fill=ink, width=w)
+        d.line([ex2 - 13, by - 6, ex2 + 13, by - 6], fill=ink, width=w)
+    else:
+        d.line([ex1 - 13, by, ex1 + 13, by], fill=ink, width=w)
+        d.line([ex2 - 13, by, ex2 + 13, by], fill=ink, width=w)
+
+
+def _eyes(d, look, mode, ey=34, ex1=48, ex2=80, er=12):
+    ink = _INK + (255,)
+    if mode == "dead":
+        for ex in (ex1, ex2):
+            d.line([ex - 8, ey - 8, ex + 8, ey + 8], fill=ink, width=5)
+            d.line([ex - 8, ey + 8, ex + 8, ey - 8], fill=ink, width=5)
+        return
+    wide = mode == "surprised"
+    rr = er + (2 if wide else 0)
+    pr = 5 if wide else 7
+    psx, psy = 6 * look, (4 if mode == "sad" else 0)
+    for ex in (ex1, ex2):
+        d.ellipse([ex - rr, ey - rr, ex + rr, ey + rr], fill=_CREAM + (255,), outline=ink, width=2)
+        d.ellipse([ex + psx - pr, ey + psy - pr, ex + psx + pr, ey + psy + pr], fill=ink)
+        d.ellipse([ex + psx - pr + 1, ey + psy - pr + 1, ex + psx - pr + 4, ey + psy - pr + 4],
+                  fill=_CREAM + (255,))
+
+
+def _mouth(d, kind, mx=64, my=70, R=18):
+    ink = _INK + (255,)
+    if kind == "bigsmile":
+        d.chord([mx - R - 2, my - R, mx + R + 2, my + R], 0, 180, fill=ink)
+    elif kind == "smile":
+        d.chord([mx - R, my - R, mx + R, my + R], 18, 162, fill=ink)
+    elif kind == "frown":
+        d.chord([mx - R, my - R + 8, mx + R, my + R + 8], 200, 340, fill=ink)
+    elif kind == "o":
+        d.ellipse([mx - R + 2, my - R, mx + R - 2, my + R], fill=ink)
+    elif kind == "grit":
+        d.rounded_rectangle([mx - R, my - 6, mx + R, my + 6], radius=3, fill=ink)
+        for tx in range(mx - R + 4, mx + R, 7):
+            d.line([tx, my - 6, tx, my + 6], fill=_GREEN + (255,), width=2)
+    else:
+        d.rounded_rectangle([mx - R, my - 3, mx + R, my + 3], radius=2, fill=ink)
 
 
 def make_face(w, h, tier, look, expr):
-    """Animated Token smiley, rendered at high res then downscaled to (w, h).
-    tier 0..4 = damage (0 = full health). look -1/0/+1 = glance L/center/R.
-    expr: normal | grin | rampage | ouch | dead | god."""
+    """Token-LOGO face (rounded square + hole-as-mouth + base ellipse), rendered
+    at high res then downscaled. Eyes glance L/C/R, brows + mouth swing happy ->
+    sad -> angry, cracks deepen with damage. expr drives the reactive states."""
     S = 128
-    GREEN = pal.hex_rgb("#17d079")
-    CREAM = pal.hex_rgb("#f5f4ea")
-    INK = pal.hex_rgb("#0e1914")
-    PINK = pal.hex_rgb("#f3bfbf")
-    img = Image.new("RGBA", (S, S), pal.hex_rgb("#03251e") + (255,))
+    img = Image.new("RGBA", (S, S), _BG + (255,))
     d = ImageDraw.Draw(img)
 
     if expr == "god":
-        head = pal.hex_rgb("#cff851")
+        head = _LIME
     elif expr == "dead":
-        head = tuple(int(c * 0.45) for c in GREEN)
+        head = tuple(int(c * 0.5) for c in _GREEN)
     else:
-        f = 1.0 - 0.11 * min(tier, 4)
-        head = tuple(int(c * f) for c in GREEN)
+        head = tuple(int(c * (1.0 - 0.10 * min(tier, 4))) for c in _GREEN)
 
-    # token-shaped head (rounded square)
-    m = 14
-    d.rounded_rectangle([m, m, S - m, S - m], radius=28,
-                        fill=head + (255,), outline=CREAM + (255,), width=4)
+    # token-logo head: rounded square + detached base ellipse
+    d.rounded_rectangle([14, 4, 114, 92], radius=24, fill=head + (255,),
+                        outline=_CREAM + (255,), width=4)
+    d.ellipse([46, 96, 82, 112], fill=head + (255,), outline=_CREAM + (255,), width=3)
 
-    # eyes
-    ey, ex1, ex2, er = 56, 47, 81, 13
-    for ex in (ex1, ex2):
-        d.ellipse([ex - er, ey - er, ex + er, ey + er], fill=CREAM + (255,))
-    if expr == "dead":
-        for ex in (ex1, ex2):
-            d.line([ex - 7, ey - 7, ex + 7, ey + 7], fill=INK + (255,), width=4)
-            d.line([ex - 7, ey + 7, ex + 7, ey - 7], fill=INK + (255,), width=4)
-    else:
-        pr, ps = 6, 6 * look
-        for ex in (ex1, ex2):
-            d.ellipse([ex + ps - pr, ey - pr, ex + ps + pr, ey + pr], fill=INK + (255,))
-
-    # angry brows for low health / rampage
-    if expr == "rampage" or (expr == "normal" and tier >= 3):
-        d.line([ex1 - 12, ey - 22, ex1 + 12, ey - 13], fill=INK + (255,), width=4)
-        d.line([ex2 - 12, ey - 13, ex2 + 12, ey - 22], fill=INK + (255,), width=4)
-
-    # mouth
-    mb = [44, 78, 84, 104]
-    fb = [44, 92, 84, 116]
-    if expr == "ouch":
-        d.ellipse([54, 84, 74, 108], fill=INK + (255,))
-    elif expr in ("grin", "god"):
-        d.chord(mb, 0, 180, fill=INK + (255,))
-    elif expr == "rampage":
-        d.line([mb[0], mb[3] - 8, mb[2], mb[3] - 8], fill=INK + (255,), width=6)
+    if expr in ("god", "grin"):
+        brow, eyem, mouth = "happy", "normal", "bigsmile"
+    elif expr in ("rampage", "hurt"):
+        brow, eyem, mouth = "angry", "normal", "grit"
+    elif expr == "ouch":
+        brow, eyem, mouth = "surprised", "surprised", "o"
     elif expr == "dead":
-        d.arc(fb, 190, 350, fill=INK + (255,), width=6)
-    else:  # normal: smile -> flat -> frown with health
-        if tier <= 1:
-            d.arc(mb, 10, 170, fill=INK + (255,), width=6)
-        elif tier == 2:
-            d.line([mb[0], (mb[1] + mb[3]) // 2, mb[2], (mb[1] + mb[3]) // 2],
-                   fill=INK + (255,), width=6)
-        else:
-            d.arc(fb, 190, 350, fill=INK + (255,), width=6)
+        brow, eyem, mouth = "sad", "dead", "frown"
+    else:
+        brow = ("happy", "neutral", "sad", "sad", "sad")[min(tier, 4)]
+        eyem = "sad" if tier >= 3 else "normal"
+        mouth = ("smile", "o", "flat", "frown", "frown")[min(tier, 4)]
 
-    # light cracks creep in at low health
-    if expr not in ("god", "grin"):
-        for i in range(min(max(0, tier - 1), len(_CRACKS))):
-            (x0, y0), (x1, y1) = _CRACKS[i]
-            d.line([(x0 * S, y0 * S), (x1 * S, y1 * S)], fill=PINK + (255,), width=2)
+    _brows(d, brow)
+    _eyes(d, look, eyem)
+    _mouth(d, mouth)
+
+    # hurt blush + sad tear
+    if expr in ("hurt", "rampage") or (expr == "normal" and tier >= 2):
+        d.ellipse([32, 58, 44, 70], fill=_PINK + (255,))
+        d.ellipse([84, 58, 96, 70], fill=_PINK + (255,))
+    if (expr == "normal" and tier >= 3) or expr == "dead":
+        d.ellipse([41, 46, 50, 64], fill=_BLUE + (255,))
+
+    # bold cracks (dark with a cream highlight so they read at HUD size)
+    ncr = 5 if expr == "dead" else min(tier, 4)
+    for i in range(min(ncr, len(_CRACKS))):
+        pts = [(x * S, y * S) for (x, y) in _CRACKS[i]]
+        d.line(pts, fill=_INK + (255,), width=8, joint="curve")
+        d.line([(x + 2, y + 1) for (x, y) in pts], fill=_CREAM + (255,), width=2, joint="curve")
 
     return img.resize((max(1, w), max(1, h)), Image.LANCZOS)
 
@@ -313,6 +359,8 @@ def build_faces(wad):
             continue
         if not (0 < w <= 64 and 0 < h <= 64):
             continue
+        if name.startswith("STFB"):   # not a standard face state
+            continue
         expr, look = "normal", 0
         dm = re.search(r"(\d)", name)
         tier = int(dm.group(1)) if dm else 0
@@ -327,9 +375,9 @@ def build_faces(wad):
         elif name.startswith("STFOUCH"):
             expr = "ouch"
         elif name.startswith("STFTR"):
-            look = 1
+            expr, look = "hurt", 1
         elif name.startswith("STFTL"):
-            look = -1
+            expr, look = "hurt", -1
         elif name.startswith("STFST") and len(name) >= 7 and name[6].isdigit():
             tier = int(name[5])
             look = (1, 0, -1)[int(name[6])] if int(name[6]) < 3 else 0
@@ -378,6 +426,26 @@ def build_titles():
     save_plain(menu, "M_DOOM", GRAPHICS)
 
 
+# Skill-menu graphics -> themed difficulty names (more access = more dangerous)
+SKILL_NAMES = {
+    "M_JKILL": "Read Only",
+    "M_ROUGH": "Least Privilege",
+    "M_HURT": "Standing Access",
+    "M_ULTRA": "Over-Privileged",
+    "M_NMARE": "Full Admin",
+}
+
+
+def build_menu():
+    green = pal.hex_rgb("#17d079")
+    for lump, text in SKILL_NAMES.items():
+        f = load_font(18)
+        tw, th = text_wh(text, f)
+        img = Image.new("RGBA", (tw + 8, th + 8), (0, 0, 0, 0))
+        ImageDraw.Draw(img).text((4, 2), text, fill=green + (255,), font=f)
+        save_plain(img, lump, GRAPHICS)
+
+
 def main():
     print("Loading WAD:", WAD_PATH)
     wad = wadlib.WAD(WAD_PATH)
@@ -409,6 +477,10 @@ def main():
     print("Titles:")
     build_titles()
     print("  TITLEPIC + M_DOOM")
+
+    print("Menu:")
+    build_menu()
+    print(f"  {len(SKILL_NAMES)} difficulty labels")
 
     print("Done.")
 
