@@ -14,6 +14,9 @@ src/graphics/
 src/PLAYPAL.lmp
 dist/smoke.log
 
+# scratch previews
+assets-src/_*.png
+
 # Python
 __pycache__/
 *.pyc
