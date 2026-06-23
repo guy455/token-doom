@@ -33,9 +33,12 @@ MONSTERS = {
     "POSS": "NHI",
     "SPOS": "Exposed Secrets",
     "TROO": "AI Agent",
-    "SARG": "MCP Server",
+    "SARG": "MCP Server",         # also the Spectre
     "HEAD": "Shadow AI",
+    "SKUL": "Rogue Token",        # Lost Soul
+    "BOSS": "Privilege Escalation",  # Baron of Hell (E1M8 boss)
 }
+# Held weapon view sprites (name overlaid on the gun).
 WEAPONS = {
     "PUNG": "Finder",
     "PISG": "Secret Scanner",
@@ -44,6 +47,14 @@ WEAPONS = {
     "MISG": "Playbook Launcher",
     "PLSG": "Auto Remediator",
     "BFGG": "Enzo",
+}
+# Ground pickup sprites for weapons (name labeled below, like monsters).
+WEAPON_PICKUPS = {
+    "SHOT": "Owner Establisher",
+    "MGUN": "Campaign Creator",
+    "LAUN": "Playbook Launcher",
+    "PLAS": "Auto Remediator",
+    "BFUG": "Enzo",
 }
 # Powerup item sprites -> (label, background brand color index)
 # (sprite name uses frame A rotation 0 for items)
@@ -120,6 +131,30 @@ def bake_label(img, leftoff, topoff, text, bar_h=11, font_size=10):
     return canvas, leftoff + pad, topoff
 
 
+def overlay_label(img, text, font_size=12):
+    """Draw the name bar ONTO the sprite near the bottom of its content,
+    without changing canvas size (so the sprite offsets stay valid)."""
+    w, h = img.size
+    font = load_font(font_size)
+    tw, th = text_wh(text, font)
+    fs = font_size
+    while tw > w - 2 and fs > 6:
+        fs -= 1
+        font = load_font(fs)
+        tw, th = text_wh(text, font)
+    bar_h = th + 3
+    bbox = img.getbbox() or (0, 0, w, h)
+    bar_bottom = min(h, bbox[3])
+    bar_top = max(0, bar_bottom - bar_h)
+    bx0 = max(0, (w - (tw + 4)) // 2)
+    bx1 = min(w, bx0 + tw + 4)
+    out = img.copy()
+    d = ImageDraw.Draw(out)
+    d.rectangle([bx0, bar_top, bx1 - 1, bar_bottom - 1], fill=WHITE)
+    d.text((bx0 + 2, bar_top + 1), text, fill=BLACK, font=font)
+    return out
+
+
 # ---- builders -------------------------------------------------------------
 def build_palette(wad):
     raw = wadlib.read_playpal_raw(wad)
@@ -129,15 +164,17 @@ def build_palette(wad):
     print(f"  PLAYPAL remapped ({len(out)} bytes)")
 
 
-def build_labeled(wad, rmap, prefixes, folder, big):
+def build_labeled(wad, rmap, prefixes, folder, big=False, mode="below"):
     n = 0
     for prefix, label in prefixes.items():
-        frames = wad.names_with_prefix(prefix)
-        for name in frames:
+        for name in wad.names_with_prefix(prefix):
             raw = wad.read(name)
             img, lo, to = wadlib.decode_picture(raw, rmap)
-            bar_h, fs = (14, 13) if big else (11, 10)
-            img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs)
+            if mode == "overlay":
+                img = overlay_label(img, label, font_size=12)
+            else:
+                bar_h, fs = (14, 13) if big else (11, 10)
+                img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs)
             save_sprite(img, name, folder, lo, to)
             n += 1
     return n
@@ -239,6 +276,45 @@ def build_faces(wad):
     return n
 
 
+def save_plain(img, name, folder):
+    img.save(os.path.join(folder, name + ".png"))
+
+
+def build_titles():
+    """TOKEN DOOM title screen (TITLEPIC) + plain-text menu logo (M_DOOM)."""
+    title = "TOKEN DOOM"
+    bg = pal.hex_rgb("#03251e")
+    green = pal.hex_rgb("#17d079")
+    cream = pal.hex_rgb("#f5f4ea")
+    lime = pal.hex_rgb("#cff851")
+
+    # TITLEPIC: 320x200 fullscreen
+    W, H = 320, 200
+    img = Image.new("RGBA", (W, H), bg + (255,))
+    mark = get_mark()
+    mh = 84
+    mw = int(mark.width * (mh / mark.height))
+    m = tint_mask(mark.resize((mw, mh)), green)
+    img.alpha_composite(m, ((W - mw) // 2, 22))
+    d = ImageDraw.Draw(img)
+    f1 = load_font(40)
+    tw, th = text_wh(title, f1)
+    d.text(((W - tw) // 2, 124), title, fill=cream + (255,), font=f1)
+    f2 = load_font(12)
+    sub = "A Token Security joint"
+    sw, _ = text_wh(sub, f2)
+    d.text(((W - sw) // 2, 176), sub, fill=lime + (255,), font=f2)
+    save_plain(img, "TITLEPIC", GRAPHICS)
+
+    # M_DOOM: plain-text menu header (transparent)
+    f3 = load_font(28)
+    tw3, th3 = text_wh(title, f3)
+    menu = Image.new("RGBA", (tw3 + 8, th3 + 8), (0, 0, 0, 0))
+    dd = ImageDraw.Draw(menu)
+    dd.text((4, 2), title, fill=green + (255,), font=f3)
+    save_plain(menu, "M_DOOM", GRAPHICS)
+
+
 def main():
     print("Loading WAD:", WAD_PATH)
     wad = wadlib.WAD(WAD_PATH)
@@ -248,12 +324,16 @@ def main():
     build_palette(wad)
 
     print("Monsters:")
-    mn = build_labeled(wad, rmap, MONSTERS, SPRITES, big=False)
+    mn = build_labeled(wad, rmap, MONSTERS, SPRITES, mode="below")
     print(f"  {mn} monster frames")
 
-    print("Weapons:")
-    wn = build_labeled(wad, rmap, WEAPONS, SPRITES, big=True)
-    print(f"  {wn} weapon frames")
+    print("Weapons (held):")
+    wn = build_labeled(wad, rmap, WEAPONS, SPRITES, mode="overlay")
+    print(f"  {wn} held weapon frames")
+
+    print("Weapons (ground):")
+    gn = build_labeled(wad, rmap, WEAPON_PICKUPS, SPRITES, mode="below")
+    print(f"  {gn} ground pickup frames")
 
     print("Powerups:")
     pn = build_powerups()
@@ -262,6 +342,10 @@ def main():
     print("Faces:")
     fn = build_faces(wad)
     print(f"  {fn} face frames")
+
+    print("Titles:")
+    build_titles()
+    print("  TITLEPIC + M_DOOM")
 
     print("Done.")
 
