@@ -28,35 +28,35 @@ def nearest_brand(rgb, _cache={}):
     return best
 
 
-# How hard to push colors toward the brand palette.
-# 1.0 = snap fully to nearest brand color (high contrast, dark).
-# Lower = keep more of the original color/brightness (softer, brighter).
-TINT = 0.5
+# How hard to push colors toward the brand palette (1.0 = full snap, dark/high
+# contrast; lower = keep more original brightness). Sprites are pushed harder
+# than the world so monsters/weapons read as branded without darkening levels.
+TINT_SPRITE = 0.8   # monster / weapon recolor
+TINT_WORLD = 0.5    # global PLAYPAL (walls, floors, untouched things)
 
 
-def tinted(rgb, _cache={}):
-    """Blend a color partway toward its nearest brand color (see TINT)."""
-    if rgb in _cache:
-        return _cache[rgb]
+def blend(rgb, t, _cache={}):
+    """Blend a color toward its nearest brand color by strength t."""
+    key = (rgb, t)
+    if key in _cache:
+        return _cache[key]
     br, bg, bb = nearest_brand(rgb)
     r, g, b = rgb
-    out = (int(r + (br - r) * TINT),
-           int(g + (bg - g) * TINT),
-           int(b + (bb - b) * TINT))
-    _cache[rgb] = out
+    out = (int(r + (br - r) * t), int(g + (bg - g) * t), int(b + (bb - b) * t))
+    _cache[key] = out
     return out
 
 
 def remap_base(orig256):
-    """Tint each of the 256 base colors toward brand."""
-    return [tinted(c) for c in orig256]
+    """Tint the 256 base colors toward brand (sprite strength)."""
+    return [blend(c, TINT_SPRITE) for c in orig256]
 
 
 def remap_playpal_lump(raw):
-    """Tint every color in the full PLAYPAL lump (all 14 sub-palettes)."""
+    """Tint every color in the full PLAYPAL lump (world strength)."""
     out = bytearray(len(raw))
     for i in range(len(raw) // 3):
         r, g, b = raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]
-        nr, ng, nb = tinted((r, g, b))
+        nr, ng, nb = blend((r, g, b), TINT_WORLD)
         out[i * 3], out[i * 3 + 1], out[i * 3 + 2] = nr, ng, nb
     return bytes(out)

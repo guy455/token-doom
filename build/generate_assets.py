@@ -227,53 +227,113 @@ _CRACKS = [
 ]
 
 
-def make_logo_face(size, cracks):
-    """Token-logo face. `cracks` 0..5 = damage level (0 = full health)."""
-    img = Image.new("RGBA", (size, size), pal.hex_rgb("#03251e") + (255,))
-    mark = get_mark()
-    mw, mh = mark.size
-    margin = max(2, size // 9)
-    avail = size - 2 * margin
-    scale = min(avail / mw, avail / mh)
-    nw, nh = max(1, int(mw * scale)), max(1, int(mh * scale))
-    m = mark.resize((nw, nh))
-    # brand green, dimmed as damage rises
-    green = pal.hex_rgb("#17d079")
-    f = 1.0 - 0.12 * min(cracks, 5)
-    m = tint_mask(m, tuple(int(c * f) for c in green))
-    img.alpha_composite(m, ((size - nw) // 2, (size - nh) // 2))
+def make_face(w, h, tier, look, expr):
+    """Animated Token smiley, rendered at high res then downscaled to (w, h).
+    tier 0..4 = damage (0 = full health). look -1/0/+1 = glance L/center/R.
+    expr: normal | grin | rampage | ouch | dead | god."""
+    S = 128
+    GREEN = pal.hex_rgb("#17d079")
+    CREAM = pal.hex_rgb("#f5f4ea")
+    INK = pal.hex_rgb("#0e1914")
+    PINK = pal.hex_rgb("#f3bfbf")
+    img = Image.new("RGBA", (S, S), pal.hex_rgb("#03251e") + (255,))
     d = ImageDraw.Draw(img)
-    w = max(1, size // 22)
-    for i in range(min(cracks, len(_CRACKS))):
-        (x0, y0), (x1, y1) = _CRACKS[i]
-        d.line([(x0 * size, y0 * size), (x1 * size, y1 * size)],
-               fill=pal.hex_rgb("#f3bfbf") + (255,), width=w)
-    return img
+
+    if expr == "god":
+        head = pal.hex_rgb("#cff851")
+    elif expr == "dead":
+        head = tuple(int(c * 0.45) for c in GREEN)
+    else:
+        f = 1.0 - 0.11 * min(tier, 4)
+        head = tuple(int(c * f) for c in GREEN)
+
+    # token-shaped head (rounded square)
+    m = 14
+    d.rounded_rectangle([m, m, S - m, S - m], radius=28,
+                        fill=head + (255,), outline=CREAM + (255,), width=4)
+
+    # eyes
+    ey, ex1, ex2, er = 56, 47, 81, 13
+    for ex in (ex1, ex2):
+        d.ellipse([ex - er, ey - er, ex + er, ey + er], fill=CREAM + (255,))
+    if expr == "dead":
+        for ex in (ex1, ex2):
+            d.line([ex - 7, ey - 7, ex + 7, ey + 7], fill=INK + (255,), width=4)
+            d.line([ex - 7, ey + 7, ex + 7, ey - 7], fill=INK + (255,), width=4)
+    else:
+        pr, ps = 6, 6 * look
+        for ex in (ex1, ex2):
+            d.ellipse([ex + ps - pr, ey - pr, ex + ps + pr, ey + pr], fill=INK + (255,))
+
+    # angry brows for low health / rampage
+    if expr == "rampage" or (expr == "normal" and tier >= 3):
+        d.line([ex1 - 12, ey - 22, ex1 + 12, ey - 13], fill=INK + (255,), width=4)
+        d.line([ex2 - 12, ey - 13, ex2 + 12, ey - 22], fill=INK + (255,), width=4)
+
+    # mouth
+    mb = [44, 78, 84, 104]
+    fb = [44, 92, 84, 116]
+    if expr == "ouch":
+        d.ellipse([54, 84, 74, 108], fill=INK + (255,))
+    elif expr in ("grin", "god"):
+        d.chord(mb, 0, 180, fill=INK + (255,))
+    elif expr == "rampage":
+        d.line([mb[0], mb[3] - 8, mb[2], mb[3] - 8], fill=INK + (255,), width=6)
+    elif expr == "dead":
+        d.arc(fb, 190, 350, fill=INK + (255,), width=6)
+    else:  # normal: smile -> flat -> frown with health
+        if tier <= 1:
+            d.arc(mb, 10, 170, fill=INK + (255,), width=6)
+        elif tier == 2:
+            d.line([mb[0], (mb[1] + mb[3]) // 2, mb[2], (mb[1] + mb[3]) // 2],
+                   fill=INK + (255,), width=6)
+        else:
+            d.arc(fb, 190, 350, fill=INK + (255,), width=6)
+
+    # light cracks creep in at low health
+    if expr not in ("god", "grin"):
+        for i in range(min(max(0, tier - 1), len(_CRACKS))):
+            (x0, y0), (x1, y1) = _CRACKS[i]
+            d.line([(x0 * S, y0 * S), (x1 * S, y1 * S)], fill=PINK + (255,), width=2)
+
+    return img.resize((max(1, w), max(1, h)), Image.LANCZOS)
 
 
 def build_faces(wad):
-    """Replace every STF* face lump with a cracked-logo frame keyed to its
-    pain tier (the digit in the name: 0 = healthy ... 4 = near death)."""
+    """Replace every STF* face lump with an animated Token smiley keyed to the
+    face state encoded in its name (pain tier + glance direction + expression).
+    GZDoom cycles these automatically -> the eyes glance around, the mouth
+    grins on pickups, grimaces while firing, and frowns as health drops."""
     n = 0
-    faces = [nm for nm in wad.names_with_prefix("STF") if nm not in ("STFB1", "STFB0")]
-    for name in set(faces):
+    for name in set(wad.names_with_prefix("STF")):
         raw = wad.read(name)
-        # original size, for matching offsets
         try:
             w, h, lo, to = struct.unpack("<hhhh", raw[:8])
         except struct.error:
             continue
-        if w <= 0 or h <= 0 or w > 64 or h > 64:
+        if not (0 < w <= 64 and 0 < h <= 64):
             continue
+        expr, look = "normal", 0
+        dm = re.search(r"(\d)", name)
+        tier = int(dm.group(1)) if dm else 0
         if name.startswith("STFDEAD"):
-            tier = 5
+            expr, tier = "dead", 4
         elif name.startswith("STFGOD"):
-            tier = 0
-        else:
-            m = re.search(r"(\d)", name)
-            tier = int(m.group(1)) if m else 0
-        face = make_logo_face(max(w, h), tier)
-        face = face.resize((w, h))
+            expr, tier = "god", 0
+        elif name.startswith("STFEVL"):
+            expr = "grin"
+        elif name.startswith("STFKILL"):
+            expr = "rampage"
+        elif name.startswith("STFOUCH"):
+            expr = "ouch"
+        elif name.startswith("STFTR"):
+            look = 1
+        elif name.startswith("STFTL"):
+            look = -1
+        elif name.startswith("STFST") and len(name) >= 7 and name[6].isdigit():
+            tier = int(name[5])
+            look = (1, 0, -1)[int(name[6])] if int(name[6]) < 3 else 0
+        face = make_face(w, h, min(tier, 4), look, expr)
         save_sprite(face, name, GRAPHICS, lo, to)
         n += 1
     return n
