@@ -4,8 +4,10 @@ $ErrorActionPreference = "Stop"
 $proj = (Resolve-Path "$PSScriptRoot\..").Path
 $dist = Join-Path $proj "dist"
 $tools = Join-Path $proj "tools"
+# The download bundles ship the engine + the Token mod only - NO Doom game data.
+# The player drops their own doom.wad into the folder (see the bundled README).
+# That keeps the downloads free of bundled game files.
 $pk3 = Join-Path $dist "token-doom.pk3"
-$wad = "D:\Downloads\doom.wad"
 $macZip = Join-Path $tools "gzdoom-macos.zip"
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -39,7 +41,6 @@ if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 $win = Join-Path $stage "win"
 New-Item -ItemType Directory -Force -Path $win | Out-Null
 Copy-Item -Recurse (Join-Path $tools "gzdoom") (Join-Path $win "gzdoom")
-Copy-Item $wad (Join-Path $win "doom.wad")
 Copy-Item $pk3 (Join-Path $win "token-doom.pk3")
 Copy-Item (Join-Path $proj "packaging\win\Play.bat") $win
 Copy-Item (Join-Path $proj "packaging\win\README.txt") $win
@@ -49,7 +50,6 @@ New-Bundle $win (Join-Path $dist "token-doom-windows.zip")
 $mac = Join-Path $stage "mac"
 New-Item -ItemType Directory -Force -Path $mac | Out-Null
 Copy-Item $macZip (Join-Path $mac "gzdoom-macos.zip")
-Copy-Item $wad (Join-Path $mac "doom.wad")
 Copy-Item $pk3 (Join-Path $mac "token-doom.pk3")
 Copy-Item (Join-Path $proj "packaging\mac\Play.command") $mac
 Copy-Item (Join-Path $proj "packaging\mac\README.txt") $mac
