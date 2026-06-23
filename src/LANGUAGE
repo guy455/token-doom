@@ -36,3 +36,8 @@ GOTARMOR = "Picked up Least-Privilege plating.";
 GOTMEGA = "Picked up Zero-Trust shielding.";
 GOTARMBONUS = "Picked up Ownership armor.";
 // unused alt: "Picked up a Posture vest."
+
+// ---- Cheats ----
+// iddqd / god mode toggle, shown at the top of the screen
+STSTR_DQDON = "ENZO MODE";
+STSTR_DQDOFF = "ENZO MODE OFF";
