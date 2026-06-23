@@ -8,6 +8,7 @@
 - Monsters renamed after the risks Token hunts; weapons are Token capabilities,
   labeled on the gun.
 - HUD relabeled: TOKENS, POSTURE, TOOLS, TRUST.
+- Difficulty levels renamed as access levels: more access, more danger.
 - Player face is the Token logo: grins on a pickup, reddens on a rampage, wears
   shades in god mode, and darkens and strains as your posture drops.
 - Name tags read correctly from every angle (mirror-shared sprite rotations are
