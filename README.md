@@ -45,6 +45,11 @@ More access, more danger.
 
 ![The Token DOOM difficulty levels](docs/difficulties.png?v=2)
 
+## Controls
+
+Mouse to aim, WASD to move, click to fire, right-click to open doors, 1-7 to
+switch weapons, Esc for the menu.
+
 ## Cheat codes
 
 Type these during play:
