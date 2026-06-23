@@ -1,5 +1,7 @@
 # Changelog
 
+Live: https://guy455.github.io/token-doom/
+
 ## v1.0
 
 - Play in the browser: PrBoom + SDL compiled to WebAssembly, with mouse aim,
