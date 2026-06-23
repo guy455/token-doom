@@ -272,15 +272,6 @@ def tint_mask(mask_img, rgb):
     return solid
 
 
-# bold jagged cracks as fraction-of-face polylines (drawn from tier 1 up)
-_CRACKS = [
-    [(0.50, 0.03), (0.45, 0.24), (0.55, 0.40)],
-    [(0.55, 0.40), (0.80, 0.30), (0.97, 0.42)],
-    [(0.45, 0.24), (0.18, 0.16), (0.03, 0.28)],
-    [(0.55, 0.40), (0.49, 0.70), (0.40, 0.98)],
-    [(0.55, 0.40), (0.72, 0.68), (0.78, 0.98)],
-]
-
 # face palette
 _GREEN = pal.hex_rgb("#17d079")
 _LIME = pal.hex_rgb("#cff851")
@@ -347,26 +338,25 @@ def _mouth(d, kind, mx=64, my=70, R=18):
         d.rounded_rectangle([mx - R, my - 3, mx + R, my + 3], radius=2, fill=ink)
 
 
-def _shades(d, ey=34, ex1=48, ex2=80):
-    """Cool sunglasses for god mode: two dark lenses, a bridge, temple arms, and
-    a glint on each lens."""
+def _shades(d, ey=33, ex1=48, ex2=80):
+    """Bold, clear sunglasses for god mode: two dark lenses inside a thick cream
+    frame, a bridge across the nose, and temple arms out to the ears."""
     ink, cream = _INK + (255,), _CREAM + (255,)
-    lw, lh = 30, 22
+    lw, lh = 34, 24
     for ex in (ex1, ex2):
-        d.rounded_rectangle([ex - lw // 2, ey - lh // 2, ex + lw // 2, ey + lh // 2],
-                            radius=6, fill=ink, outline=cream, width=2)
-    d.rectangle([ex1 + lw // 2 - 2, ey - 3, ex2 - lw // 2 + 2, ey + 1], fill=ink)   # bridge
-    d.line([ex1 - lw // 2, ey - 3, 15, ey - 9], fill=ink, width=5)                  # left temple
-    d.line([ex2 + lw // 2, ey - 3, 113, ey - 9], fill=ink, width=5)                 # right temple
-    for ex in (ex1, ex2):                                                           # glint
-        d.line([ex - lw // 2 + 5, ey + lh // 2 - 5, ex - lw // 2 + 12, ey - lh // 2 + 5],
-               fill=cream, width=3)
+        x0, y0, x1, y1 = ex - lw // 2, ey - lh // 2, ex + lw // 2, ey + lh // 2
+        d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=cream)                 # frame
+        d.rounded_rectangle([x0 + 3, y0 + 3, x1 - 3, y1 - 3], radius=6, fill=ink)   # lens
+        d.line([x0 + 7, y1 - 6, x1 - 8, y0 + 6], fill=cream, width=3)               # glint
+    d.rectangle([ex1 + lw // 2 - 4, ey - 4, ex2 - lw // 2 + 4, ey], fill=cream)     # bridge
+    d.line([ex1 - lw // 2, ey - 5, 13, ey - 11], fill=cream, width=5)              # left temple
+    d.line([ex2 + lw // 2, ey - 5, 115, ey - 11], fill=cream, width=5)            # right temple
 
 
 def make_face(w, h, tier, look, expr):
     """Token-LOGO face (rounded square + hole-as-mouth + base ellipse), rendered
     at high res then downscaled. Eyes glance L/C/R, brows + mouth swing happy ->
-    sad -> angry, cracks deepen with damage. expr drives the reactive states."""
+    strained, and the head darkens with damage. expr drives the reactive states."""
     S = 128
     img = Image.new("RGBA", (S, S), _BG + (255,))
     d = ImageDraw.Draw(img)
@@ -376,9 +366,9 @@ def make_face(w, h, tier, look, expr):
     elif expr == "rampage":
         head = _RAGE
     elif expr == "dead":
-        head = tuple(int(c * 0.5) for c in _GREEN)
+        head = tuple(int(c * 0.34) for c in _GREEN)
     else:
-        head = tuple(int(c * (1.0 - 0.10 * min(tier, 4))) for c in _GREEN)
+        head = tuple(int(c * (1.0 - 0.17 * min(tier, 4))) for c in _GREEN)
 
     # token-logo head: rounded square + detached base ellipse
     d.rounded_rectangle([14, 4, 114, 92], radius=24, fill=head + (255,),
@@ -394,9 +384,9 @@ def make_face(w, h, tier, look, expr):
     elif expr == "dead":
         brow, eyem, mouth = "sad", "dead", "frown"
     else:
-        brow = ("happy", "neutral", "sad", "sad", "sad")[min(tier, 4)]
-        eyem = "sad" if tier >= 3 else "normal"
-        mouth = ("smile", "o", "flat", "frown", "frown")[min(tier, 4)]
+        brow = ("happy", "neutral", "sad", "angry", "angry")[min(tier, 4)]
+        eyem = "sad" if tier >= 2 else "normal"
+        mouth = ("smile", "flat", "frown", "grit", "grit")[min(tier, 4)]
 
     _brows(d, brow)
     if expr == "god":
@@ -405,19 +395,13 @@ def make_face(w, h, tier, look, expr):
         _eyes(d, look, eyem)
     _mouth(d, mouth)
 
-    # hurt blush + sad tear
+    # flushed cheeks, then a sweat bead, as the beating adds up (no face cracks;
+    # the head just goes darker and more strained instead)
     if expr in ("hurt", "rampage") or (expr == "normal" and tier >= 2):
         d.ellipse([32, 58, 44, 70], fill=_PINK + (255,))
         d.ellipse([84, 58, 96, 70], fill=_PINK + (255,))
     if (expr == "normal" and tier >= 3) or expr == "dead":
-        d.ellipse([41, 46, 50, 64], fill=_BLUE + (255,))
-
-    # bold cracks (dark with a cream highlight so they read at HUD size)
-    ncr = 5 if expr == "dead" else min(tier, 4)
-    for i in range(min(ncr, len(_CRACKS))):
-        pts = [(x * S, y * S) for (x, y) in _CRACKS[i]]
-        d.line(pts, fill=_INK + (255,), width=8, joint="curve")
-        d.line([(x + 2, y + 1) for (x, y) in pts], fill=_CREAM + (255,), width=2, joint="curve")
+        d.ellipse([92, 14, 104, 32], fill=_BLUE + (255,))
 
     return img.resize((max(1, w), max(1, h)), Image.LANCZOS)
 
