@@ -24,33 +24,29 @@ any modern browser.
 
 ![Out in the open, Token green everywhere](docs/gameplay-3.png)
 
-## What you're fighting
+## Enemies
 
-**Monsters** keep their shapes, wear the Token palette, and carry a name tag over
-their heads:
+The risks Token hunts, recolored and renamed. Their names float over their heads
+in-game.
 
-| Doom monster | Token name |
-|---|---|
-| Zombieman | NHI |
-| Shotgun Guy | Exposed Secrets |
-| Imp | AI Agent |
-| Demon / Spectre | MCP Server |
-| Cacodemon | Shadow AI |
-| Lost Soul | Rogue Token |
-| Baron of Hell | Privilege Escalation |
-| Cyberdemon | Nation-State APT |
-| Spider Mastermind | Rogue Superintelligence |
+![Enemies](docs/enemies.png)
 
-**Weapons** are Token capabilities, labeled on the gun: Finder (fist), Secret
-Scanner (pistol), Auto Remediator (shotgun), Campaign Creator (chaingun),
-Playbook Launcher (rockets), Owner Establisher (plasma), Enzo (BFG).
+## Weapons
 
-**The player face** is the Token logo, animated: eyes glance around, it grins on
-a pickup, grimaces while firing, and cracks as health drops.
+Token capabilities, labeled right on the gun.
+
+![Weapons](docs/weapons.png)
+
+## The face
+
+The Token logo, animated: eyes glance around, it grins on a pickup, grimaces
+while firing, and cracks as health drops.
 
 ![Faces](docs/faces.png)
 
-**Difficulties** are access levels: more access, more danger.
+## Difficulties
+
+Access levels: more access, more danger.
 
 ![Difficulties](docs/difficulties.png)
 
@@ -64,26 +60,6 @@ the launcher.
 - macOS (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-macos.zip) → add `doom.wad`, run `Play.command`
 
 Latest builds are on the [releases page](https://github.com/guy455/token-doom/releases/latest).
-
-## Build from source
-
-The repo ships the recipe, not the copyrighted Doom art. `generate_assets.py`
-reads sprites from a local `doom.wad`, recolors and labels them, and writes the
-mod into `src/`:
-
-```
-python build/generate_assets.py          # doom.wad -> src/ (sprites, palette, labels)
-python build/make_pk3.py                 # src/ -> dist/token-doom.pk3 (GZDoom desktop mod)
-python build/make_wad.py                 # src/ -> dist/token-doom.wad (vanilla WAD)
-powershell -File build/make_release.ps1  # Windows + macOS download bundles
-```
-
-The browser builds live in `web-sdl/` (PrBoom + SDL, mouse and sound) and `web/`
-(doom.wasm, keyboard); see their READMEs to rebuild and deploy.
-`build/make_web_deploy.py` assembles the hostable bundle.
-
-Palette strength lives in `build/palette.py`. Names, faces, and labels live in
-`build/generate_assets.py`.
 
 ## Legal
 
