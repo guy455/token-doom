@@ -14,41 +14,41 @@ face is the Token logo, and it cracks as your health drops.
 No install, no download. Mouse aims, WASD moves, click fires, sound on. Runs in
 any modern browser.
 
-![Title](docs/title.png)
+![Title](docs/title.png?v=2)
 
 ## Screenshots
 
-![Facing an Exposed Secrets enemy with the Secret Scanner](docs/gameplay-1.png)
+![Facing an Exposed Secrets enemy with the Secret Scanner](docs/gameplay-1.png?v=2)
 
-![Clearing a room with the Auto Remediator](docs/gameplay-2.png)
+![Clearing a room with the Auto Remediator](docs/gameplay-2.png?v=2)
 
-![Out in the open, Token green everywhere](docs/gameplay-3.png)
+![Out in the open, Token green everywhere](docs/gameplay-3.png?v=2)
 
 ## Enemies
 
 The risks Token hunts, recolored and renamed. Their names float over their heads
 in-game.
 
-![Enemies](docs/enemies.png)
+![Enemies](docs/enemies.png?v=2)
 
 ## Weapons
 
 Token capabilities, labeled right on the gun.
 
-![Weapons](docs/weapons.png)
+![Weapons](docs/weapons.png?v=2)
 
 ## The face
 
 The Token logo, animated: eyes glance around, it grins on a pickup, grimaces
 while firing, and cracks as health drops.
 
-![Faces](docs/faces.png)
+![Faces](docs/faces.png?v=2)
 
 ## Difficulties
 
 Access levels: more access, more danger.
 
-![Difficulties](docs/difficulties.png)
+![Difficulties](docs/difficulties.png?v=2)
 
 ## Cheat codes
 
@@ -57,8 +57,8 @@ Type these during play:
 | Code | Name | Effect |
 |---|---|---|
 | `iddqd` | Enzo Mode | invincibility (your face puts on shades) |
-| `idkfa` | Break Glass | all weapons, ammo, armor, and keys |
-| `idclev11`–`idclev19` | Lateral Movement | warp to any Episode 1 level |
+| `idkfa` | Full Inventory | all weapons, ammo, armor, and keys |
+| `idclev11`–`idclev19` | Change Environment | warp to any Episode 1 level |
 
 ## Prefer a native build? Download for desktop
 
