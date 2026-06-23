@@ -281,6 +281,8 @@ _PINK = pal.hex_rgb("#f3bfbf")
 _BLUE = pal.hex_rgb("#809cff")
 _BG = pal.hex_rgb("#03251e")
 _RAGE = pal.hex_rgb("#d23a2a")   # angry red for the rampage (firing) face
+_BLACK = pal.hex_rgb("#060806")  # true black for the god-mode sunglasses
+_DEATH = pal.hex_rgb("#b23ab8")  # magenta-purple for the death face
 
 
 def _brows(d, mode, by=16, ex1=48, ex2=80):
@@ -306,8 +308,8 @@ def _eyes(d, look, mode, ey=34, ex1=48, ex2=80, er=12):
     ink = _INK + (255,)
     if mode == "dead":
         for ex in (ex1, ex2):
-            d.line([ex - 8, ey - 8, ex + 8, ey + 8], fill=ink, width=5)
-            d.line([ex - 8, ey + 8, ex + 8, ey - 8], fill=ink, width=5)
+            d.line([ex - 13, ey - 13, ex + 13, ey + 13], fill=ink, width=8)
+            d.line([ex - 13, ey + 13, ex + 13, ey - 13], fill=ink, width=8)
         return
     wide = mode == "surprised"
     rr = er + (2 if wide else 0)
@@ -339,18 +341,17 @@ def _mouth(d, kind, mx=64, my=70, R=18):
 
 
 def _shades(d, ey=33, ex1=48, ex2=80):
-    """Bold, clear sunglasses for god mode: two dark lenses inside a thick cream
-    frame, a bridge across the nose, and temple arms out to the ears."""
-    ink, cream = _INK + (255,), _CREAM + (255,)
+    """Cool black sunglasses for god mode: black lenses + bridge, bold black
+    temple arms out to the ears, and a bright glint on each lens."""
+    blk, cream = _BLACK + (255,), _CREAM + (255,)
     lw, lh = 34, 24
     for ex in (ex1, ex2):
         x0, y0, x1, y1 = ex - lw // 2, ey - lh // 2, ex + lw // 2, ey + lh // 2
-        d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=cream)                 # frame
-        d.rounded_rectangle([x0 + 3, y0 + 3, x1 - 3, y1 - 3], radius=6, fill=ink)   # lens
-        d.line([x0 + 7, y1 - 6, x1 - 8, y0 + 6], fill=cream, width=3)               # glint
-    d.rectangle([ex1 + lw // 2 - 4, ey - 4, ex2 - lw // 2 + 4, ey], fill=cream)     # bridge
-    d.line([ex1 - lw // 2, ey - 5, 13, ey - 11], fill=cream, width=5)              # left temple
-    d.line([ex2 + lw // 2, ey - 5, 115, ey - 11], fill=cream, width=5)            # right temple
+        d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=blk)                  # black lens
+        d.line([x0 + 6, y1 - 6, x1 - 9, y0 + 7], fill=cream, width=3)              # glint
+    d.rectangle([ex1 + lw // 2 - 4, ey - 5, ex2 - lw // 2 + 4, ey + 1], fill=blk)  # bridge
+    d.line([ex1 - lw // 2, ey - 5, 12, ey - 12], fill=blk, width=8)               # bold left temple
+    d.line([ex2 + lw // 2, ey - 5, 116, ey - 12], fill=blk, width=8)             # bold right temple
 
 
 def make_face(w, h, tier, look, expr):
@@ -366,7 +367,7 @@ def make_face(w, h, tier, look, expr):
     elif expr == "rampage":
         head = _RAGE
     elif expr == "dead":
-        head = tuple(int(c * 0.34) for c in _GREEN)
+        head = _DEATH
     else:
         head = tuple(int(c * (1.0 - 0.17 * min(tier, 4))) for c in _GREEN)
 
@@ -400,7 +401,7 @@ def make_face(w, h, tier, look, expr):
     if expr in ("hurt", "rampage") or (expr == "normal" and tier >= 2):
         d.ellipse([32, 58, 44, 70], fill=_PINK + (255,))
         d.ellipse([84, 58, 96, 70], fill=_PINK + (255,))
-    if (expr == "normal" and tier >= 3) or expr == "dead":
+    if expr == "normal" and tier >= 3:
         d.ellipse([92, 14, 104, 32], fill=_BLUE + (255,))
 
     return img.resize((max(1, w), max(1, h)), Image.LANCZOS)

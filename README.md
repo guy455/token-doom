@@ -37,7 +37,7 @@ Pick your tool.
 
 It does not handle stress well.
 
-![The animated Token DOOM player face](docs/faces.png?v=3)
+![The animated Token DOOM player face](docs/faces.png?v=4)
 
 ## Difficulty
 
