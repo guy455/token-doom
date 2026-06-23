@@ -1,42 +1,74 @@
 # Token DOOM
 
-A rudimentary, intentionally rough Token Security reskin of DOOM Episode 1, shipped as a GZDoom mod. Marketing / fun project.
+DOOM, reskinned as a Token Security marketing piece. The whole game is recolored
+to the Token palette, the monsters are renamed after the risks Token hunts (NHIs,
+shadow AI, MCP servers, rogue tokens), the weapons become Token capabilities, and
+the player's face is the Token logo that cracks and frowns as you take damage.
 
-## What it is
-- DOOM E1 with Token branding: recolored to the Token palette, enemies and weapons relabeled with security concepts, text-box powerups, a Token-logo player face that cracks as you take damage.
-- No new levels. Stock E1 maps, reskinned.
+Episode 1, no new levels. Runs on GZDoom. Rudimentary on purpose.
 
-## Stack
-- **Engine:** GZDoom 4.14.2 (portable, in `tools/`, gitignored)
-- **Game data:** the user's own `doom.wad` (Ultimate DOOM IWAD) — NOT committed
-- **Mod:** a PK3 (zip) built from `src/`, loaded on top of the IWAD
-- **Asset pipeline:** Python + Pillow scripts in `build/` that read sprites from the WAD, recolor to the Token palette, bake labels, and emit PNGs into `src/sprites/`
+![Title](docs/title.png)
 
-## Scope (locked)
-Monsters reskinned (recolor + name label, original shapes kept):
-- Zombieman → NHI
-- Shotgun Guy → Exposed Secrets
-- Imp → AI Agent
-- Demon → MCP Server
-- Cacodemon → Shadow AI
-- Lost Soul → unchanged
+## Download and play
 
-Weapons (recolor + name baked below sprite):
-- Fist → Finder, Pistol → Secret Scanner, Shotgun → Owner Establisher,
-  Chaingun → Campaign Creator, Rocket Launcher → Playbook Launcher,
-  Plasma Gun → Auto Remediator, BFG → Enzo
+No install. Download, unzip, double-click.
 
-Powerups: text-box sprites + custom pickup messages.
-Player face: Token logo, cracking across 5 health tiers.
-Palette: 19 Token brand colors; whole game remapped to nearest brand color (cohesive tint).
+- **Windows** → [token-doom-windows.zip](https://github.com/guy455/token-doom/releases/download/v0.5/token-doom-windows.zip) → run `Play.bat`
+- **macOS** (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/download/v0.5/token-doom-macos.zip) → run `Play.command`
 
-## Build
-1. Generate assets: run `build/generate_assets.py` (reads `doom.wad`, writes `src/sprites/`).
-2. Pack: zip `src/` contents into `dist/token-doom.pk3`.
-3. Run: `tools/gzdoom/gzdoom.exe -iwad <doom.wad> -file dist/token-doom.pk3`
+Everything is bundled: the engine, the game data, and the mod. Latest builds are
+always on the [releases page](https://github.com/guy455/token-doom/releases/latest).
 
-## Note on distribution
-Building on the user's `doom.wad` is fine for local/dev use. A public marketing
-giveaway built on id's original sprites would infringe id Software IP; for public
-release the base would move to the BSD-licensed Freedoom IWAD (different monster
-art). Decide at release time.
+## What's in it
+
+**The player face** is the Token logo, fully animated: eyes glance around, it
+grins on a pickup, grimaces while firing, and cracks + frowns as health drops.
+
+![Faces](docs/faces.png)
+
+**Monsters** keep their shapes, wear the Token palette, and carry a name tag:
+
+| Doom monster | Token name |
+|---|---|
+| Zombieman | NHI |
+| Shotgun Guy | Exposed Secrets |
+| Imp | AI Agent |
+| Demon / Spectre | MCP Server |
+| Cacodemon | Shadow AI |
+| Lost Soul | Rogue Token |
+| Baron of Hell | Privilege Escalation |
+| Cyberdemon | Nation-State APT |
+| Spider Mastermind | Rogue Superintelligence |
+
+**Weapons** are Token capabilities, named on the gun and the pickup: Finder
+(fist), Secret Scanner (pistol), Owner Establisher (shotgun), Campaign Creator
+(chaingun), Playbook Launcher (rockets), Auto Remediator (plasma), Enzo (BFG).
+
+**Difficulties** are access levels — more access, more danger:
+
+![Difficulties](docs/difficulties.png)
+
+**Powerups** are text boxes; health/armor/ammo pickups carry Token-flavored
+messages.
+
+## Build from source
+
+The repo ships the recipe, not the copyrighted Doom art. The build script reads
+sprites from a local `doom.wad`, recolors and labels them, and writes the mod.
+
+```
+python build/generate_assets.py     # reads D:\Downloads\doom.wad -> src/
+# zip src/ into dist/token-doom.pk3, then:
+tools/gzdoom/gzdoom.exe -iwad doom.wad -file dist/token-doom.pk3
+```
+
+`build/make_release.ps1` assembles the Windows + macOS download bundles.
+
+Palette strength lives in `build/palette.py` (`TINT_SPRITE`, `TINT_WORLD`).
+Names, faces, and difficulty labels live in `build/generate_assets.py`.
+
+## Legal
+
+GZDoom is GPL. The Token branding and generated art are Token's own. The base
+Doom game data is id Software's and is bundled here for internal use only — not
+for public redistribution.
