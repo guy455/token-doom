@@ -50,6 +50,16 @@ Access levels: more access, more danger.
 
 ![Difficulties](docs/difficulties.png)
 
+## Cheat codes
+
+Type these during play:
+
+| Code | Name | Effect |
+|---|---|---|
+| `iddqd` | Enzo Mode | invincibility (your face puts on shades) |
+| `idkfa` | Break Glass | all weapons, ammo, armor, and keys |
+| `idclev11`–`idclev19` | Lateral Movement | warp to any Episode 1 level |
+
 ## Prefer a native build? Download for desktop
 
 Bring your own Doom: drop a `doom.wad` (from a full copy of Doom on Steam or GOG,

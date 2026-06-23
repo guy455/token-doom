@@ -37,25 +37,27 @@ MONSTERS = {
     "HEAD": "Shadow AI",
     "SKUL": "Rogue Token",        # Lost Soul
     "BOSS": "Privilege Escalation",  # Baron of Hell (E1M8 boss)
-    "CYBR": "Nation-State APT",    # Cyberdemon
-    "SPID": "Rogue Superintelligence",  # Spider Mastermind
+    "CYBR": "Rogue AI Orchestrator",  # Cyberdemon
+    "SPID": "AI Agent Swarm",        # Spider Mastermind
 }
 # Held weapon view sprites (name overlaid on the gun).
 WEAPONS = {
-    "PUNG": "Finder",
+    "PUNG": "Manual Triage",
+    "SAWG": "Shredder",
     "PISG": "Secret Scanner",
     "SHTG": "Auto Remediator",
     "CHGG": "Campaign Creator",
     "MISG": "Playbook Launcher",
-    "PLSG": "Owner Establisher",
+    "PLSG": "Revoker",
     "BFGG": "Enzo",
 }
 # Ground pickup sprites for weapons (name labeled below, like monsters).
 WEAPON_PICKUPS = {
+    "CSAW": "Shredder",
     "SHOT": "Auto Remediator",
     "MGUN": "Campaign Creator",
     "LAUN": "Playbook Launcher",
-    "PLAS": "Owner Establisher",
+    "PLAS": "Revoker",
     "BFUG": "Enzo",
 }
 # Powerup item sprites -> (label, background brand color index)
@@ -287,6 +289,7 @@ _INK = pal.hex_rgb("#0e1914")
 _PINK = pal.hex_rgb("#f3bfbf")
 _BLUE = pal.hex_rgb("#809cff")
 _BG = pal.hex_rgb("#03251e")
+_RAGE = pal.hex_rgb("#d23a2a")   # angry red for the rampage (firing) face
 
 
 def _brows(d, mode, by=16, ex1=48, ex2=80):
@@ -344,6 +347,22 @@ def _mouth(d, kind, mx=64, my=70, R=18):
         d.rounded_rectangle([mx - R, my - 3, mx + R, my + 3], radius=2, fill=ink)
 
 
+def _shades(d, ey=34, ex1=48, ex2=80):
+    """Cool sunglasses for god mode: two dark lenses, a bridge, temple arms, and
+    a glint on each lens."""
+    ink, cream = _INK + (255,), _CREAM + (255,)
+    lw, lh = 30, 22
+    for ex in (ex1, ex2):
+        d.rounded_rectangle([ex - lw // 2, ey - lh // 2, ex + lw // 2, ey + lh // 2],
+                            radius=6, fill=ink, outline=cream, width=2)
+    d.rectangle([ex1 + lw // 2 - 2, ey - 3, ex2 - lw // 2 + 2, ey + 1], fill=ink)   # bridge
+    d.line([ex1 - lw // 2, ey - 3, 15, ey - 9], fill=ink, width=5)                  # left temple
+    d.line([ex2 + lw // 2, ey - 3, 113, ey - 9], fill=ink, width=5)                 # right temple
+    for ex in (ex1, ex2):                                                           # glint
+        d.line([ex - lw // 2 + 5, ey + lh // 2 - 5, ex - lw // 2 + 12, ey - lh // 2 + 5],
+               fill=cream, width=3)
+
+
 def make_face(w, h, tier, look, expr):
     """Token-LOGO face (rounded square + hole-as-mouth + base ellipse), rendered
     at high res then downscaled. Eyes glance L/C/R, brows + mouth swing happy ->
@@ -354,6 +373,8 @@ def make_face(w, h, tier, look, expr):
 
     if expr == "god":
         head = _LIME
+    elif expr == "rampage":
+        head = _RAGE
     elif expr == "dead":
         head = tuple(int(c * 0.5) for c in _GREEN)
     else:
@@ -378,7 +399,10 @@ def make_face(w, h, tier, look, expr):
         mouth = ("smile", "o", "flat", "frown", "frown")[min(tier, 4)]
 
     _brows(d, brow)
-    _eyes(d, look, eyem)
+    if expr == "god":
+        _shades(d)
+    else:
+        _eyes(d, look, eyem)
     _mouth(d, mouth)
 
     # hurt blush + sad tear
@@ -438,6 +462,36 @@ def build_faces(wad):
         save_sprite(face, name, GRAPHICS, lo, to)
         n += 1
     return n
+
+
+def _relabel(wad, rmap, lump, items, folder=None):
+    """Repaint baked text labels on a status-bar graphic. items = list of
+    (text, font_size, fill rect, bg-sample point, left-x or None to centre)."""
+    img, lo, to = wadlib.decode_picture(wad.read(lump), rmap)
+    d = ImageDraw.Draw(img)
+    cream = _CREAM + (255,)
+    for text, fs, (x0, y0, x1, y1), (sx, sy), lx in items:
+        d.rectangle([x0, y0, x1, y1], fill=img.getpixel((sx, sy)))
+        font = load_font(fs)
+        tw, th = text_wh(text, font)
+        tx = lx if lx is not None else x0 + ((x1 - x0) - tw) // 2
+        d.text((tx, y0 + ((y1 - y0) - th) // 2 - 1), text, fill=cream, font=font)
+    save_sprite(img, lump, folder or GRAPHICS, lo, to)
+
+
+def build_statusbar(wad, rmap):
+    """Rename the status-bar labels: AMMO -> TOKENS, HEALTH -> POSTURE (on
+    STBAR), ARMS -> TOOLS (on the STARMS weapon-slot widget), ARMOR -> TRUST.
+    POSTURE is left-aligned + smaller so it clears the weapon-slot numbers."""
+    _relabel(wad, rmap, "STBAR", [
+        ("TOKENS", 8, (4, 20, 50, 29), (27, 16), None),
+        ("POSTURE", 7, (52, 20, 110, 29), (66, 16), 54),
+        ("TRUST", 8, (184, 20, 244, 29), (215, 16), None),
+    ])
+    # STARMS is a 40x32 widget; "ARMS" is baked across its bottom row.
+    _relabel(wad, rmap, "STARMS", [
+        ("TOOLS", 8, (2, 21, 38, 31), (20, 19), None),
+    ])
 
 
 def save_plain(img, name, folder):
@@ -555,6 +609,10 @@ def main():
     print("Faces:")
     fn = build_faces(wad)
     print(f"  {fn} face frames")
+
+    print("Status bar:")
+    build_statusbar(wad, rmap)
+    print("  STBAR labels")
 
     print("Titles:")
     build_titles()

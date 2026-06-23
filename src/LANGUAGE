@@ -1,19 +1,21 @@
 [enu default]
 
 // ---- Weapon names (shown in HUD / slot tags) ----
-TAG_FIST = "Finder";
+TAG_FIST = "Manual Triage";
+TAG_CHAINSAW = "Shredder";
 TAG_PISTOL = "Secret Scanner";
 TAG_SHOTGUN = "Auto Remediator";
 TAG_CHAINGUN = "Campaign Creator";
 TAG_ROCKETLAUNCHER = "Playbook Launcher";
-TAG_PLASMARIFLE = "Owner Establisher";
+TAG_PLASMARIFLE = "Revoker";
 TAG_BFG9000 = "Enzo";
 
 // ---- Weapon pickup messages ----
+GOTCHAINSAW = "Got the Shredder. Time to shred.";
 GOTSHOTGUN = "You got the Auto Remediator!";
 GOTCHAINGUN = "You got the Campaign Creator!";
 GOTLAUNCHER = "You got the Playbook Launcher!";
-GOTPLASMA = "You got the Owner Establisher!";
+GOTPLASMA = "You got the Revoker!";
 GOTBFG9000 = "You got Enzo. Oh, yes.";
 
 // ---- Ammo pickups ----
@@ -41,3 +43,6 @@ GOTARMBONUS = "Picked up Ownership armor.";
 // iddqd / god mode toggle, shown at the top of the screen
 STSTR_DQDON = "ENZO MODE";
 STSTR_DQDOFF = "ENZO MODE OFF";
+// idkfa / all weapons + ammo + keys
+STSTR_KFAADDED = "BREAK GLASS";
+STSTR_FAADDED = "BREAK GLASS";
