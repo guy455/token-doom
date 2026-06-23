@@ -160,25 +160,54 @@ def build_powerups():
     return n
 
 
+_MARK = None
+
+
+def get_mark():
+    global _MARK
+    if _MARK is None:
+        _MARK = Image.open(os.path.join(ROOT, "assets-src", "token-mark.png")).convert("RGBA")
+    return _MARK
+
+
+def tint_mask(mask_img, rgb):
+    """Recolor an RGBA image to a flat color, keeping its alpha."""
+    solid = Image.new("RGBA", mask_img.size, rgb + (255,))
+    solid.putalpha(mask_img.split()[3])
+    return solid
+
+
+# crack lines as fractions of the face, drawn from damage tier 1 upward
+_CRACKS = [
+    [(0.50, 0.06), (0.55, 0.50)],
+    [(0.55, 0.50), (0.95, 0.56)],
+    [(0.05, 0.50), (0.50, 0.55)],
+    [(0.50, 0.55), (0.38, 0.95)],
+    [(0.56, 0.50), (0.72, 0.95)],
+]
+
+
 def make_logo_face(size, cracks):
-    """Placeholder Token-logo face. `cracks` 0..5 = damage level."""
-    img = Image.new("RGBA", (size, size), pal.hex_rgb("#00352a") + (255,))
+    """Token-logo face. `cracks` 0..5 = damage level (0 = full health)."""
+    img = Image.new("RGBA", (size, size), pal.hex_rgb("#03251e") + (255,))
+    mark = get_mark()
+    mw, mh = mark.size
+    margin = max(2, size // 9)
+    avail = size - 2 * margin
+    scale = min(avail / mw, avail / mh)
+    nw, nh = max(1, int(mw * scale)), max(1, int(mh * scale))
+    m = mark.resize((nw, nh))
+    # brand green, dimmed as damage rises
+    green = pal.hex_rgb("#17d079")
+    f = 1.0 - 0.12 * min(cracks, 5)
+    m = tint_mask(m, tuple(int(c * f) for c in green))
+    img.alpha_composite(m, ((size - nw) // 2, (size - nh) // 2))
     d = ImageDraw.Draw(img)
-    m = 3
-    # "token" = a rounded shield/coin
-    d.ellipse([m, m, size - m, size - m], fill=pal.hex_rgb("#17d079") + (255,),
-              outline=pal.hex_rgb("#f5f4ea") + (255,), width=2)
-    d.text((size // 2 - 6, size // 2 - 6), "T", fill=BLACK, font=load_font(size - 12))
-    # cracks scale with damage
-    crack_lines = [
-        [(size // 2, m), (size // 2 + 3, size // 2)],
-        [(size // 2 + 3, size // 2), (size - m, size // 2 + 4)],
-        [(m, size // 2 + 2), (size // 2, size // 2 + 5)],
-        [(size // 2, size // 2 + 5), (size // 2 - 4, size - m)],
-        [(size // 2 + 2, size // 2), (size // 2 + 8, size - m)],
-    ]
-    for i in range(min(cracks, len(crack_lines))):
-        d.line(crack_lines[i], fill=pal.hex_rgb("#f3bfbf") + (255,), width=1)
+    w = max(1, size // 22)
+    for i in range(min(cracks, len(_CRACKS))):
+        (x0, y0), (x1, y1) = _CRACKS[i]
+        d.line([(x0 * size, y0 * size), (x1 * size, y1 * size)],
+               fill=pal.hex_rgb("#f3bfbf") + (255,), width=w)
     return img
 
 
