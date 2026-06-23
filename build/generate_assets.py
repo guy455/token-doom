@@ -37,6 +37,8 @@ MONSTERS = {
     "HEAD": "Shadow AI",
     "SKUL": "Rogue Token",        # Lost Soul
     "BOSS": "Privilege Escalation",  # Baron of Hell (E1M8 boss)
+    "CYBR": "Nation-State APT",    # Cyberdemon
+    "SPID": "Rogue Superintelligence",  # Spider Mastermind
 }
 # Held weapon view sprites (name overlaid on the gun).
 WEAPONS = {
@@ -144,8 +146,9 @@ def overlay_label(img, text, font_size=12):
         tw, th = text_wh(text, font)
     bar_h = th + 3
     bbox = img.getbbox() or (0, 0, w, h)
-    bar_bottom = min(h, bbox[3])
-    bar_top = max(0, bar_bottom - bar_h)
+    # anchor near the TOP of the gun so the name stays above the status bar
+    bar_top = max(0, bbox[1] + 2)
+    bar_bottom = min(h, bar_top + bar_h)
     bx0 = max(0, (w - (tw + 4)) // 2)
     bx1 = min(w, bx0 + tw + 4)
     out = img.copy()
