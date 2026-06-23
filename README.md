@@ -1,38 +1,33 @@
 # Token DOOM
 
-DOOM Episode 1, reskinned as Token Security. The game wears the Token palette,
-the monsters are renamed after the risks Token hunts (NHIs, shadow AI, MCP
-servers, rogue tokens), the weapons are Token capabilities, and the player's face
-is the Token logo that cracks and frowns as you take damage.
+The risks Token hunts, turned into things you can shoot.
 
-## Play in the browser
+It's DOOM Episode 1, recolored Token green, with every monster renamed after a
+threat we kill for real: non-human identities, exposed secrets, rogue AI agents,
+shadow AI, privilege escalation. The weapons are Token capabilities. The player's
+face is the Token logo, and it cracks as your health drops.
 
-**[Play Token DOOM now](https://guy455.github.io/token-doom/)**
+## Play it now
 
-No install. Mouse aims, WASD moves, click fires, sound on. Runs in any modern
-browser.
+**[Play Token DOOM in your browser](https://guy455.github.io/token-doom/)**
+
+No install, no download. Mouse aims, WASD moves, click fires, sound on. Runs in
+any modern browser.
 
 ![Title](docs/title.png)
 
-## Prefer a native build? Download for desktop
+## Screenshots
 
-Bring your own Doom: drop a `doom.wad` (from a full copy of Doom on Steam or GOG,
-or the free [freedoom1.wad](https://freedoom.github.io)) into the folder, then run
-the launcher.
+![Facing an Exposed Secrets enemy with the Secret Scanner](docs/gameplay-1.png)
 
-- Windows → [token-doom-windows.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-windows.zip) → add `doom.wad`, run `Play.bat`
-- macOS (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-macos.zip) → add `doom.wad`, run `Play.command`
+![Clearing a room with the Auto Remediator](docs/gameplay-2.png)
 
-Latest builds are on the [releases page](https://github.com/guy455/token-doom/releases/latest).
+![Out in the open, Token green everywhere](docs/gameplay-3.png)
 
-## What's in it
+## What you're fighting
 
-**The player face** is the Token logo, animated: eyes glance around, it grins on
-a pickup, grimaces while firing, and cracks as health drops.
-
-![Faces](docs/faces.png)
-
-**Monsters** keep their shapes, wear the Token palette, and carry a name tag:
+**Monsters** keep their shapes, wear the Token palette, and carry a name tag over
+their heads:
 
 | Doom monster | Token name |
 |---|---|
@@ -46,15 +41,29 @@ a pickup, grimaces while firing, and cracks as health drops.
 | Cyberdemon | Nation-State APT |
 | Spider Mastermind | Rogue Superintelligence |
 
-**Weapons** are Token capabilities, named on the gun and the pickup: Finder
-(fist), Secret Scanner (pistol), Auto Remediator (shotgun), Campaign Creator
-(chaingun), Playbook Launcher (rockets), Owner Establisher (plasma), Enzo (BFG).
+**Weapons** are Token capabilities, labeled on the gun: Finder (fist), Secret
+Scanner (pistol), Auto Remediator (shotgun), Campaign Creator (chaingun),
+Playbook Launcher (rockets), Owner Establisher (plasma), Enzo (BFG).
+
+**The player face** is the Token logo, animated: eyes glance around, it grins on
+a pickup, grimaces while firing, and cracks as health drops.
+
+![Faces](docs/faces.png)
 
 **Difficulties** are access levels: more access, more danger.
 
 ![Difficulties](docs/difficulties.png)
 
-**Powerups** carry Token-flavored pickup messages on health, armor, and ammo.
+## Prefer a native build? Download for desktop
+
+Bring your own Doom: drop a `doom.wad` (from a full copy of Doom on Steam or GOG,
+or the free [freedoom1.wad](https://freedoom.github.io)) into the folder, then run
+the launcher.
+
+- Windows → [token-doom-windows.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-windows.zip) → add `doom.wad`, run `Play.bat`
+- macOS (Apple Silicon + Intel) → [token-doom-macos.zip](https://github.com/guy455/token-doom/releases/latest/download/token-doom-macos.zip) → add `doom.wad`, run `Play.command`
+
+Latest builds are on the [releases page](https://github.com/guy455/token-doom/releases/latest).
 
 ## Build from source
 
