@@ -44,18 +44,18 @@ MONSTERS = {
 WEAPONS = {
     "PUNG": "Finder",
     "PISG": "Secret Scanner",
-    "SHTG": "Owner Establisher",
+    "SHTG": "Auto Remediator",
     "CHGG": "Campaign Creator",
     "MISG": "Playbook Launcher",
-    "PLSG": "Auto Remediator",
+    "PLSG": "Owner Establisher",
     "BFGG": "Enzo",
 }
 # Ground pickup sprites for weapons (name labeled below, like monsters).
 WEAPON_PICKUPS = {
-    "SHOT": "Owner Establisher",
+    "SHOT": "Auto Remediator",
     "MGUN": "Campaign Creator",
     "LAUN": "Playbook Launcher",
-    "PLAS": "Auto Remediator",
+    "PLAS": "Owner Establisher",
     "BFUG": "Enzo",
 }
 # Powerup item sprites -> (label, background brand color index)
@@ -117,9 +117,11 @@ def save_sprite(img, name, folder, xoff, yoff):
 
 
 # ---- label baking ---------------------------------------------------------
-def bake_label(img, leftoff, topoff, text, bar_h=11, font_size=10):
-    """Add a white bar with black text under the sprite. Widen canvas if the
-    text is wider than the sprite, keeping the body centered (offset adjusted)."""
+def bake_label(img, leftoff, topoff, text, bar_h=11, font_size=10, clear=False):
+    """Add a name label UNDER the sprite. Widen canvas if the text is wider than
+    the sprite, keeping the body centered (offset adjusted). Default is black text
+    on a white bar; with clear=True the bar is dropped and the text is white with
+    a thin dark outline (transparent background)."""
     w, h = img.size
     font = load_font(font_size)
     tw, th = text_wh(text, font)
@@ -128,9 +130,43 @@ def bake_label(img, leftoff, topoff, text, bar_h=11, font_size=10):
     canvas = Image.new("RGBA", (new_w, h + bar_h), (0, 0, 0, 0))
     canvas.paste(img, (pad, 0))
     d = ImageDraw.Draw(canvas)
-    d.rectangle([0, h, new_w - 1, h + bar_h - 1], fill=WHITE)
-    d.text(((new_w - tw) // 2, h + (bar_h - th) // 2 - 1), text, fill=BLACK, font=font)
+    tx = (new_w - tw) // 2
+    ty = h + (bar_h - th) // 2 - 1
+    if clear:
+        d.text((tx, ty), text, fill=WHITE, font=font, stroke_width=1, stroke_fill=BLACK)
+    else:
+        d.rectangle([0, h, new_w - 1, h + bar_h - 1], fill=WHITE)
+        d.text((tx, ty), text, fill=BLACK, font=font)
     return canvas, leftoff + pad, topoff
+
+
+def bake_label_above(img, leftoff, topoff, text, bar_h=11, font_size=10, clear=False):
+    """Add a name label ABOVE the sprite, sitting just over the content top.
+    The canvas grows upward only as far as needed, and the topoffset grows by the
+    same amount so the body stays anchored. Default is black text on a white bar.
+    With clear=True, the bar is dropped and the text is drawn white with a thin
+    dark outline (transparent background) - used for held weapons you own."""
+    w, h = img.size
+    font = load_font(font_size)
+    tw, th = text_wh(text, font)
+    bbox = img.getbbox() or (0, 0, w, h)
+    head_top = bbox[1]
+    new_w = max(w, tw + 4)
+    pad = (new_w - w) // 2
+    grow = max(0, bar_h - head_top)  # extra rows needed above the original top
+    canvas = Image.new("RGBA", (new_w, h + grow), (0, 0, 0, 0))
+    canvas.paste(img, (pad, grow))
+    bar_bottom = head_top + grow  # flush with the top of the head
+    bar_top = bar_bottom - bar_h
+    d = ImageDraw.Draw(canvas)
+    tx = (new_w - tw) // 2
+    ty = bar_top + (bar_h - th) // 2 - 1
+    if clear:
+        d.text((tx, ty), text, fill=WHITE, font=font, stroke_width=1, stroke_fill=BLACK)
+    else:
+        d.rectangle([0, bar_top, new_w - 1, bar_bottom - 1], fill=WHITE)
+        d.text((tx, ty), text, fill=BLACK, font=font)
+    return canvas, leftoff + pad, topoff + grow
 
 
 def overlay_label(img, text, font_size=12):
@@ -167,33 +203,33 @@ def build_palette(wad):
     print(f"  PLAYPAL remapped ({len(out)} bytes)")
 
 
-def build_labeled(wad, rmap, prefixes, folder, big=False, mode="below"):
+def build_labeled(wad, rmap, prefixes, folder, mode="below", fs=14, clear=False):
+    bar_h = fs + 1
     n = 0
     for prefix, label in prefixes.items():
         for name in wad.names_with_prefix(prefix):
             raw = wad.read(name)
             img, lo, to = wadlib.decode_picture(raw, rmap)
-            if mode == "overlay":
-                img = overlay_label(img, label, font_size=12)
+            if mode == "above":
+                img, lo, to = bake_label_above(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
             else:
-                bar_h, fs = (14, 13) if big else (11, 10)
-                img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs)
+                img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
             save_sprite(img, name, folder, lo, to)
             n += 1
     return n
 
 
 def build_powerups():
+    # White text with a thin dark outline, transparent background - matching the
+    # held-weapon and monster labels. The bg color in POWERUPS is now unused.
     n = 0
-    for name, (label, bg) in POWERUPS.items():
-        font = load_font(10)
+    for name, (label, _bg) in POWERUPS.items():
+        font = load_font(12)
         tw, th = text_wh(label, font)
-        w, h = tw + 8, th + 8
+        w, h = tw + 6, th + 6
         img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         d = ImageDraw.Draw(img)
-        d.rectangle([0, 0, w - 1, h - 1], fill=bg + (255,))
-        d.rectangle([0, 0, w - 1, h - 1], outline=WHITE, width=1)
-        d.text((4, 3), label, fill=BLACK, font=font)
+        d.text((3, 2), label, fill=WHITE, font=font, stroke_width=1, stroke_fill=BLACK)
         # item offset: centered horizontally, origin at bottom (sits on floor)
         save_sprite(img, name, SPRITES, w // 2, h)
         n += 1
@@ -412,7 +448,7 @@ def build_titles():
     tw, th = text_wh(title, f1)
     d.text(((W - tw) // 2, 124), title, fill=cream + (255,), font=f1)
     f2 = load_font(12)
-    sub = "A Token Security joint"
+    sub = "A Token Security game"
     sw, _ = text_wh(sub, f2)
     d.text(((W - sw) // 2, 176), sub, fill=lime + (255,), font=f2)
     save_plain(img, "TITLEPIC", GRAPHICS)
@@ -468,15 +504,15 @@ def main():
     build_palette(wad)
 
     print("Monsters:")
-    mn = build_labeled(wad, rmap, MONSTERS, SPRITES, mode="below")
+    mn = build_labeled(wad, rmap, MONSTERS, SPRITES, mode="above", fs=14, clear=True)
     print(f"  {mn} monster frames")
 
     print("Weapons (held):")
-    wn = build_labeled(wad, rmap, WEAPONS, SPRITES, mode="overlay")
+    wn = build_labeled(wad, rmap, WEAPONS, SPRITES, mode="above", fs=14, clear=True)
     print(f"  {wn} held weapon frames")
 
     print("Weapons (ground):")
-    gn = build_labeled(wad, rmap, WEAPON_PICKUPS, SPRITES, mode="below")
+    gn = build_labeled(wad, rmap, WEAPON_PICKUPS, SPRITES, mode="below", fs=10, clear=True)
     print(f"  {gn} ground pickup frames")
 
     print("Powerups:")

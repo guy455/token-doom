@@ -1,0 +1,251 @@
+<!doctype html>
+<!--
+  Token DOOM - browser build (SDL engine, mouse + sound).
+
+  Engine: GMH-Code/Dwasm (https://github.com/GMH-Code/Dwasm), a prebuilt
+  PrBoom+/PrBoomX WebAssembly build (SDL2). Single-threaded, no COOP/COEP needed.
+  It loads a custom IWAD + PWAD at runtime via Emscripten MEMFS.
+
+  We auto-load the freely redistributable shareware doom1.wad as the IWAD and
+  token-doom.wad (our recolor + relabel mod) as a PWAD overlay. PrBoom is a Boom
+  engine, so the PWAD works as an overlay (no merge needed) and the DEHACKED lump
+  is read, so pickup-message renames apply too.
+
+  The Module wiring (pointer lock, console toggle, resize, print) is reproduced
+  from Dwasm's reference page so mouse + audio behave as upstream intends.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1" />
+    <title>Token DOOM</title>
+    <style>
+      body {
+        background: #0b0f14;
+        color: #cfd8e3;
+        font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+        margin: 0;
+        text-align: center;
+      }
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #0b0f14;
+        z-index: 10;
+      }
+      #splash h1 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        margin: 0;
+      }
+      #splash p { font-size: 12px; opacity: 0.6; margin: 0; max-width: 460px; }
+      #play {
+        margin-top: 6px;
+        padding: 12px 28px;
+        font: inherit;
+        letter-spacing: 0.1em;
+        color: #0b0f14;
+        background: #3ad07a;
+        border: 0;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #play:disabled { background: #2a3a30; color: #6b7a72; cursor: default; }
+      #status { font-size: 12px; opacity: 0.6; height: 16px; }
+      /* Engine console shown during load, hidden once video starts. */
+      #output {
+        display: none;
+        margin: 8px auto;
+        font-family: monospace;
+        font-size: 12px;
+        color: #9fb0a4;
+        background: #0b0f14;
+        border: 1px solid #1d2733;
+        width: calc(100% - 24px);
+        height: calc(100vh - 24px);
+        resize: none;
+        outline: none;
+      }
+      canvas {
+        border: 0;
+        background: #000;
+        display: none;
+        image-rendering: pixelated;
+        outline: none;
+        width: calc(min(100vw, 100vh * 4 / 3));
+        height: calc(min(100vh, 100vw * 0.75));
+        margin: calc(0.5 * (100vh - (min(100vh, 100vw * 0.75)))) auto 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="splash">
+      <h1>TOKEN DOOM</h1>
+      <p>Plays in your browser. Mouse turns, click fires, WASD moves, right-click uses, 1-7 weapons, Esc for the menu. Sound on.</p>
+      <button id="play" disabled>loading.</button>
+      <div id="status"></div>
+    </div>
+    <textarea id="output" readonly></textarea>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+    <script>
+      const canvasElement = document.getElementById("canvas");
+      const outputElement = document.getElementById("output");
+      const statusElement = document.getElementById("status");
+      const splashElement = document.getElementById("splash");
+      const playButton = document.getElementById("play");
+
+      let userFileDict = {}; // filename -> [type, Uint8Array]; type 'i' iwad, 'p' pwad, 'd' deh
+
+      function _printText(text) {
+        outputElement.value += text + "\n";
+        if (outputElement.value.length > 2097152)
+          outputElement.value = outputElement.value.slice(-1048576);
+        outputElement.scrollTop = outputElement.scrollHeight;
+      }
+
+      // Module wiring reproduced from Dwasm's reference page (pointer lock,
+      // console toggle, resize, MEMFS write of the supplied WADs).
+      var Module = {
+        _canLockPointer: true,
+        canvas: (function () {
+          canvasElement.addEventListener(
+            "webglcontextlost",
+            function (e) {
+              e.preventDefault();
+              alert("WebGL context lost. Please reload the page!");
+            },
+            false
+          );
+          return canvasElement;
+        })(),
+        print: function (text) {
+          console.log(text);
+          _printText(text);
+        },
+        printErr: function (text) {
+          console.error(text);
+          _printText("(!) " + text);
+        },
+        setStatus: function (text) {
+          statusElement.innerHTML = text;
+        },
+        monitorRunDependencies: function () {},
+        onRuntimeInitialized: function () {
+          for (let userFilename in userFileDict) {
+            const userFileData = userFileDict[userFilename][1];
+            const userFileSize = userFileData.length;
+            const fd = FS.open("/" + userFilename, "w");
+            FS.write(fd, userFileData, 0, userFileSize, 0);
+            FS.close(fd);
+          }
+          userFileDict = {};
+          this.showConsole();
+          this.setStatus("");
+        },
+        hideConsole: function () {
+          outputElement.style.display = "none";
+          canvasElement.style.display = "block";
+          canvasElement.focus();
+        },
+        showConsole: function () {
+          canvasElement.style.display = "none";
+          outputElement.style.display = "block";
+          outputElement.scrollTop = outputElement.scrollHeight;
+          outputElement.focus();
+        },
+        captureMouse: function () {
+          if (Module._canLockPointer && !Module._attemptPointerLock()) {
+            Module._canLockPointer = false;
+            document.addEventListener("keydown", Module._lockPointerOnKey);
+          }
+        },
+        winResized: function () {
+          let dVW, dVH;
+          if (window.CSS && window.CSS.supports("height", "1dvh")) {
+            dVW = "100dvw";
+            dVH = "100dvh";
+          } else {
+            dVW = "100vw";
+            dVH = "100vh";
+          }
+          const aspX = canvasElement.width + " / " + canvasElement.height;
+          const aspY = canvasElement.height + " / " + canvasElement.width;
+          canvasElement.style.width = "calc(min(" + dVW + ", " + dVH + " * " + aspX + "))";
+          canvasElement.style.height = "calc(min(" + dVH + ", " + dVW + " * " + aspY + "))";
+          canvasElement.style.marginTop =
+            "calc(0.5 * (" + dVH + " - (min(" + dVH + ", " + dVW + " * " + aspY + "))))";
+        },
+        _attemptPointerLock: function () {
+          if (document.pointerLockElement === null) canvasElement.requestPointerLock();
+          return document.pointerLockElement !== null;
+        },
+        _lockPointerOnKey: function (event) {
+          if (event.key === "Escape" || Module._attemptPointerLock()) {
+            document.removeEventListener("keydown", Module._lockPointerOnKey);
+            Module._canLockPointer = true;
+          }
+        },
+        softExit: (status) => console.info("Program exited with code", status),
+        arguments: [],
+      };
+
+      function startGame() {
+        window.scrollTo(0, 0);
+        let args = [];
+        let iwad = null;
+        const pwads = [];
+        const dehs = [];
+        for (let f in userFileDict) {
+          const t = userFileDict[f][0];
+          if (t === "i") iwad = f;
+          else if (t === "p") pwads.push(f);
+          else if (t === "d") dehs.push(f);
+        }
+        if (iwad) args = args.concat(["-iwad", iwad]);
+        if (pwads.length) args = args.concat(["-file"]).concat(pwads);
+        if (dehs.length) args = args.concat(["-deh"]).concat(dehs);
+        if (window.location.search.length > 1)
+          args = args.concat(window.location.search.substr(1).split("&"));
+        console.info("Token DOOM startup args:", args.toString());
+        Module["arguments"] = args;
+        // Block the engine's attempts to change document.title (cosmetic).
+        Object.defineProperty(document, "title", { set: function () {}, get: () => "Token DOOM" });
+        const mainScript = document.createElement("script");
+        mainScript.src = "index.js";
+        mainScript.async = true;
+        document.body.appendChild(mainScript);
+      }
+
+      // Prefetch the WADs so the Play click can boot instantly (the click is the
+      // user gesture that unlocks audio + pointer lock).
+      (async function () {
+        try {
+          Module.setStatus("downloading game.");
+          const [iw, pw] = await Promise.all([
+            fetch("doom1.wad").then((r) => r.arrayBuffer()),
+            fetch("token-doom.wad").then((r) => r.arrayBuffer()),
+          ]);
+          userFileDict["doom1.wad"] = ["i", new Uint8Array(iw)];
+          userFileDict["token-doom.wad"] = ["p", new Uint8Array(pw)];
+          playButton.disabled = false;
+          playButton.textContent = "play";
+          Module.setStatus("");
+        } catch (e) {
+          Module.setStatus("failed to load: " + e.message);
+        }
+      })();
+
+      playButton.addEventListener("click", function () {
+        splashElement.style.display = "none";
+        startGame();
+      });
+    </script>
+  </body>
+</html>

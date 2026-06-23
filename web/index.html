@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<!--
+  Token DOOM - browser build.
+
+  Loads the doom.wasm engine (Chocolate/doomgeneric class) and feeds it a single
+  combined WAD client-side: the freely redistributable shareware Episode 1 data
+  with our recolor + relabel overrides merged in. No server, no install.
+
+  The engine (doom.wasm v0.1.0) traps on a second injected WAD, so the mod is
+  pre-merged into one IWAD by build/make_wad.py (MODE=merge) rather than loaded
+  as a PWAD overlay.
+
+  Engine: https://github.com/jacobenget/doom.wasm  (WAD injection via the
+  loading.wadSizes / loading.readWads imports).
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Token DOOM</title>
+    <style>
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: #0b0f14;
+        color: #cfd8e3;
+        font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 100vh;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        margin: 0;
+      }
+      #hint { font-size: 11px; opacity: 0.55; }
+      #stage {
+        border: 1px solid #1d2733;
+        background: #000;
+        box-shadow: 0 0 0 1px #000, 0 12px 40px rgba(0, 0, 0, 0.6);
+        line-height: 0;
+      }
+      canvas#DoomGame {
+        display: block;
+        image-rendering: pixelated;
+        /* Doom renders at 320x200 (8:5). Fill the viewport, capped by height
+           or width, keeping crisp integer-ish scaling. */
+        aspect-ratio: 8 / 5;
+        height: min(86vh, 53.75vw);
+        width: auto;
+        opacity: 85%;
+      }
+      canvas#DoomGame:focus { opacity: 100%; outline: none; }
+      #status { font-size: 11px; opacity: 0.55; height: 14px; }
+    </style>
+  </head>
+  <body>
+    <h1>TOKEN DOOM</h1>
+    <div id="hint">click to lock mouse · WASD move · mouse turn · click fire · right-click use · 1-7 weapons · Esc menu / release</div>
+    <div id="stage">
+      <canvas id="DoomGame" tabindex="0"></canvas>
+    </div>
+    <div id="status">loading engine and WADs.</div>
+
+    <script type="text/javascript">
+      const setStatus = (t) => (document.getElementById("status").textContent = t);
+
+      async function loadDoomGame(canvas) {
+        let moduleInstanceMemory = null;
+        const ctx = canvas.getContext("2d");
+        let scratchSpaceImageData = null;
+
+        // Fetch the combined WAD up front: the engine asks for it synchronously
+        // during initGame(), so the bytes must already be in hand. One merged
+        // IWAD (shareware E1 + our overrides), injected as a single WAD.
+        setStatus("downloading game.");
+        const wadBuf = await fetch("assets/token-doom-web.wad").then((r) => r.arrayBuffer());
+        const wads = [new Uint8Array(wadBuf)];
+        const totalBytes = wads.reduce((n, w) => n + w.length, 0);
+
+        function onGameInit(width, height) {
+          canvas.width = width;
+          canvas.height = height;
+          scratchSpaceImageData = ctx.createImageData(width, height);
+        }
+
+        function wadSizes(numberOfWadsPtr, totalBytesPtr) {
+          const dv = new DataView(moduleInstanceMemory.buffer);
+          dv.setInt32(numberOfWadsPtr, wads.length, true);
+          dv.setInt32(totalBytesPtr, totalBytes, true); // size_t is 32-bit on wasm32
+        }
+
+        function readWads(wadDataDestinationPtr, byteLengthOfEachWadPtr) {
+          const dst = new Uint8Array(moduleInstanceMemory.buffer);
+          const dv = new DataView(moduleInstanceMemory.buffer);
+          let offset = wadDataDestinationPtr;
+          wads.forEach((w, i) => {
+            dst.set(w, offset);
+            offset += w.length;
+            dv.setInt32(byteLengthOfEachWadPtr + i * 4, w.length, true);
+          });
+        }
+
+        function drawFrame(indexOfFrameBuffer) {
+          const fb = new Uint8Array(
+            moduleInstanceMemory.buffer,
+            indexOfFrameBuffer,
+            canvas.width * canvas.height * 4
+          );
+          const out = scratchSpaceImageData.data;
+          for (let i = 0; i < out.length / 4; i++) {
+            // Doom frame buffer is BGRA in little-endian memory order.
+            out[4 * i + 0] = fb[4 * i + 2];
+            out[4 * i + 1] = fb[4 * i + 1];
+            out[4 * i + 2] = fb[4 * i + 0];
+            out[4 * i + 3] = 255;
+          }
+          ctx.putImageData(scratchSpaceImageData, 0, 0);
+        }
+
+        const timeInMilliseconds = () => BigInt(Math.trunc(performance.now()));
+        const readStr = (ptr, len) =>
+          new TextDecoder("utf-8", { fatal: false }).decode(
+            new Uint8Array(moduleInstanceMemory.buffer).slice(ptr, ptr + len)
+          );
+
+        const imports = {
+          loading: { onGameInit, wadSizes, readWads },
+          ui: { drawFrame },
+          runtimeControl: { timeInMilliseconds },
+          console: {
+            onInfoMessage: (p, n) => console.log("[doom]", readStr(p, n)),
+            onErrorMessage: (p, n) => console.error("[doom]", readStr(p, n)),
+          },
+          gameSaving: {
+            sizeOfSaveGame: () => 0,
+            readSaveGame: () => 0,
+            writeSaveGame: () => 0,
+          },
+        };
+
+        setStatus("starting engine.");
+        const { instance } = await WebAssembly.instantiateStreaming(
+          fetch("assets/doom.wasm"),
+          imports
+        );
+        const ex = instance.exports;
+        moduleInstanceMemory = ex.memory;
+
+        // WASD movement (A/D strafe, modern FPS style); arrows still work too.
+        const keyMap = new Map([
+          ["w", ex.KEY_UPARROW],
+          ["s", ex.KEY_DOWNARROW],
+          ["a", ex.KEY_STRAFE_L],
+          ["d", ex.KEY_STRAFE_R],
+          ["ArrowUp", ex.KEY_UPARROW],
+          ["ArrowDown", ex.KEY_DOWNARROW],
+          ["ArrowLeft", ex.KEY_LEFTARROW],
+          ["ArrowRight", ex.KEY_RIGHTARROW],
+          ["q", ex.KEY_STRAFE_L],
+          ["e", ex.KEY_STRAFE_R],
+          ["Control", ex.KEY_FIRE],
+          [" ", ex.KEY_USE],
+          ["Shift", ex.KEY_SHIFT],
+          ["Tab", ex.KEY_TAB],
+          ["Escape", ex.KEY_ESCAPE],
+          ["Enter", ex.KEY_ENTER],
+          ["Backspace", ex.KEY_BACKSPACE],
+          ["Alt", ex.KEY_ALT],
+        ]);
+
+        function toDoomKey(e) {
+          const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+          let k = null;
+          if (keyMap.has(key)) k = keyMap.get(key);
+          else if (key.length === 1) k = key.charCodeAt(0);
+          if (k !== null) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+          return k;
+        }
+        canvas.addEventListener("keydown", (e) => {
+          const k = toDoomKey(e);
+          if (k !== null) ex.reportKeyDown(k);
+        });
+        canvas.addEventListener("keyup", (e) => {
+          const k = toDoomKey(e);
+          if (k !== null) ex.reportKeyUp(k);
+        });
+
+        // ---- Mouse: buttons fire/use, movement turns -------------------------
+        // This engine build has no analog mouse input, so horizontal turning is
+        // approximated: pointer-lock movement is translated into taps of the
+        // turn keys. Fixed turn speed, not smooth analog, but it reads as mouse.
+        const TURN_DEADZONE = 2; // px of movement before we start turning
+        const TURN_RELEASE_MS = 70; // how long after the last move to stop turning
+        let turnHeld = 0; // -1 left, +1 right, 0 none
+        let turnTimer = null;
+
+        function setTurn(dir) {
+          if (dir === turnHeld) return;
+          if (turnHeld === -1) ex.reportKeyUp(ex.KEY_LEFTARROW);
+          if (turnHeld === 1) ex.reportKeyUp(ex.KEY_RIGHTARROW);
+          if (dir === -1) ex.reportKeyDown(ex.KEY_LEFTARROW);
+          if (dir === 1) ex.reportKeyDown(ex.KEY_RIGHTARROW);
+          turnHeld = dir;
+        }
+
+        const locked = () => document.pointerLockElement === canvas;
+
+        canvas.addEventListener("mousemove", (e) => {
+          if (!locked()) return;
+          const dx = e.movementX;
+          if (Math.abs(dx) < TURN_DEADZONE) return;
+          setTurn(dx > 0 ? 1 : -1);
+          clearTimeout(turnTimer);
+          turnTimer = setTimeout(() => setTurn(0), TURN_RELEASE_MS);
+        });
+
+        canvas.addEventListener("mousedown", (e) => {
+          if (!locked()) return;
+          e.preventDefault();
+          if (e.button === 0) ex.reportKeyDown(ex.KEY_FIRE);
+          else if (e.button === 2) ex.reportKeyDown(ex.KEY_USE);
+        });
+        canvas.addEventListener("mouseup", (e) => {
+          if (!locked()) return;
+          e.preventDefault();
+          if (e.button === 0) ex.reportKeyUp(ex.KEY_FIRE);
+          else if (e.button === 2) ex.reportKeyUp(ex.KEY_USE);
+        });
+        canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        // Click to focus + capture the mouse. Releasing the lock (Esc) drops
+        // any held turn so the player doesn't keep spinning.
+        canvas.addEventListener("click", () => {
+          canvas.focus();
+          if (!locked() && canvas.requestPointerLock) canvas.requestPointerLock();
+        });
+        document.addEventListener("pointerlockchange", () => {
+          if (!locked()) {
+            clearTimeout(turnTimer);
+            setTurn(0);
+          }
+        });
+
+        ex.initGame();
+        setStatus("");
+        canvas.focus();
+        setInterval(ex.tickGame, 1000 / 35); // Doom runs at 35 fps
+      }
+
+      addEventListener("load", () => {
+        loadDoomGame(document.getElementById("DoomGame")).catch((err) => {
+          console.error(err);
+          setStatus("failed to start: " + err.message);
+        });
+      });
+    </script>
+  </body>
+</html>

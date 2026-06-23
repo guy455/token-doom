@@ -3,17 +3,17 @@
 // ---- Weapon names (shown in HUD / slot tags) ----
 TAG_FIST = "Finder";
 TAG_PISTOL = "Secret Scanner";
-TAG_SHOTGUN = "Owner Establisher";
+TAG_SHOTGUN = "Auto Remediator";
 TAG_CHAINGUN = "Campaign Creator";
 TAG_ROCKETLAUNCHER = "Playbook Launcher";
-TAG_PLASMARIFLE = "Auto Remediator";
+TAG_PLASMARIFLE = "Owner Establisher";
 TAG_BFG9000 = "Enzo";
 
 // ---- Weapon pickup messages ----
-GOTSHOTGUN = "You got the Owner Establisher!";
+GOTSHOTGUN = "You got the Auto Remediator!";
 GOTCHAINGUN = "You got the Campaign Creator!";
 GOTLAUNCHER = "You got the Playbook Launcher!";
-GOTPLASMA = "You got the Auto Remediator!";
+GOTPLASMA = "You got the Owner Establisher!";
 GOTBFG9000 = "You got Enzo. Oh, yes.";
 
 // ---- Ammo pickups ----

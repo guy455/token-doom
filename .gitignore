@@ -1,6 +1,14 @@
 # Engine + installers (downloaded, not source)
 tools/
 
+# Downloaded browser-engine binaries (not source) — see web*/README.md to refetch
+web/assets/doom.wasm
+web-sdl/index.js
+web-sdl/index.wasm
+web-sdl/index.data
+web-sdl/getgame.js
+web-sdl/oly.js
+
 # Build output
 dist/
 
