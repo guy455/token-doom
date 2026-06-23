@@ -1,11 +1,11 @@
 # Token DOOM
 
-I reskinned DOOM's first episode. The demons are security threats (rogue agents,
-exposed secrets, shadow AI), the guns got renamed, the whole place is painted
-green, and the marine's face is a little logo that grins, panics, and falls apart
-as you take a beating.
+Rip and tear through your threat model.
 
-A fun open-source side project. Play it in your browser, no install.
+Token DOOM is DOOM's first episode reskinned: the demons are security threats
+(rogue agents, exposed secrets, shadow AI), the guns are renamed, the whole place
+is painted green, and the marine's face is a logo slowly losing its mind. Free,
+open source, runs in your browser. Go shoot something.
 
 **[Play Token DOOM](https://guy455.github.io/token-doom/)**
 
