@@ -13,6 +13,8 @@ open source, runs in your browser. Go shoot something.
 
 ## Screenshots
 
+![Token DOOM gameplay clip](docs/demo.gif)
+
 ![Token DOOM gameplay](docs/gameplay-1.png?v=2)
 
 ![Token DOOM gameplay](docs/gameplay-2.png?v=2)
