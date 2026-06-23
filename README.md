@@ -73,7 +73,8 @@ Latest builds are on the [releases page](https://github.com/guy455/token-doom/re
 
 ## Credits and legal
 
-Built on the GZDoom and PrBoom engines (GPL). The browser version runs on id
+Built on [GZDoom](https://zdoom.org) for desktop and [Dwasm](https://github.com/GMH-Code/Dwasm),
+a PrBoom WebAssembly build, for the browser, both GPL. The browser version runs on id
 Software's freely redistributable Doom shareware; the desktop builds ship no game
 data, so you bring your own. "Token" and its logo belong to Token Security.
 Everything I built here is open source. Issues and pull requests welcome.
