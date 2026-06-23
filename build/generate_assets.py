@@ -65,7 +65,7 @@ WEAPON_PICKUPS = {
 POWERUPS = {
     "BON1A0": ("Discovery cycle", pal.hex_rgb("#cff851")),   # health bonus
     "BON2A0": ("Ownership point", pal.hex_rgb("#809cff")),   # armor bonus
-    "STIMA0": ("Patch applied", pal.hex_rgb("#06d495")),  # stimpack +10
+    "STIMA0": ("Posture boost", pal.hex_rgb("#06d495")),  # stimpack +10
     "MEDIA0": ("Identity remediated", pal.hex_rgb("#17d079")),    # medikit +25
     "SOULA0": ("Posture restored", pal.hex_rgb("#eecc1d")),  # soulsphere
     "MEGAA0": ("Full coverage", pal.hex_rgb("#cff851")),     # megasphere

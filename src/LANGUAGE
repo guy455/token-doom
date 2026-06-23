@@ -27,7 +27,7 @@ GOTBACKPACK = "Picked up a coverage backpack.";
 
 // ---- Health pickups ----
 GOTHTHBONUS = "Picked up Discovery cycles.";
-GOTSTIM = "Patch applied. +10";
+GOTSTIM = "Posture boost. +10";
 GOTMEDIKIT = "Identity remediated. +25";
 GOTMEDINEED = "Identity remediated. +25";
 GOTSUPER = "Posture restored.";
