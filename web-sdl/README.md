@@ -19,26 +19,29 @@ Esc menu. Sound is on. F1 in-game shows the full key list.
   PrBoom+/PrBoomX WebAssembly build (SDL2). Single-threaded, so no COOP/COEP
   headers, plain static hosting works.
 - `index.html` reproduces Dwasm's `Module` wiring (pointer lock, console toggle,
-  resize) but replaces the file-picker UI with a Token splash that auto-loads two
-  WADs into Emscripten MEMFS and boots PrBoom with `-iwad doom1.wad -file
-  token-doom.wad`.
-- `token-doom.wad` is the same vanilla PWAD the desktop pipeline produces
-  (`dist/token-doom.wad`), loaded as an overlay. No merge needed: PrBoom is a Boom
-  engine with full PWAD support, and it reads the DEHACKED lump, so pickup-message
-  renames apply here (unlike the `../web/` doom.wasm build).
+  resize) but replaces the file-picker UI with a Token splash that auto-loads one
+  merged IWAD into Emscripten MEMFS and boots PrBoom with `-iwad token-doom.wad`.
+- `token-doom.wad` here is the merged IWAD (shareware E1 + our overrides), the
+  same artifact as `../web/assets/token-doom-web.wad`. We don't overlay a PWAD:
+  the mirror-split sprites would collide with the shareware IWAD's combined
+  rotation lumps (PrBoom rejects two lumps per rotation), so the combined lumps
+  are dropped inside the merged IWAD. PrBoom still reads the IWAD's DEHACKED lump,
+  so pickup-message renames apply.
 
 Prebuilt engine files (`index.js`, `index.wasm`, `index.data`) are from
 dwasm.m-h.org.uk. `index.data` bundles PrBoom's helper `prboomx.wad`.
 
-## Rebuild the PWAD
+## Rebuild the WAD
 
 ```
-python build/make_wad.py                       # writes dist/token-doom.wad
-cp dist/token-doom.wad web-sdl/token-doom.wad
+python build/make_wad.py                           # dist/token-doom.wad (vanilla PWAD)
+MODE=merge IWAD_PATH=web-sdl/doom1.wad \
+  OUT_WAD=web/assets/token-doom-web.wad python build/make_wad.py
+cp web/assets/token-doom-web.wad web-sdl/token-doom.wad
 ```
 
-(No `MODE=merge` here. The merged single-IWAD is only for the `../web/` doom.wasm
-build, which can't take a second WAD.)
+`web-sdl/doom1.wad` is the source shareware IWAD, kept only as the merge input
+(the page does not fetch it).
 
 ## vs the other build (`../web/`)
 
@@ -46,7 +49,7 @@ build, which can't take a second WAD.)
 |---|---|---|
 | Mouse | faked turn via key taps | real analog turning |
 | Sound | none | yes |
-| WAD | single merged IWAD | IWAD + PWAD overlay |
+| WAD | single merged IWAD | single merged IWAD |
 | DEHACKED renames | ignored | applied |
 | Engine size | ~4.5 MB | ~3 MB (wasm+data) |
 | Headers | none | none |

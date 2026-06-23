@@ -212,13 +212,55 @@ def main():
         iwad_path = os.environ.get("IWAD_PATH", os.path.join(ROOT, "web", "assets", "doom1.wad"))
         iw = wadlib.WAD(iwad_path)
         overrides = {name: data for (name, data) in lumps if data}
+
+        # Our sprite override names (those between the S_START/S_END markers).
+        spr_names, inblock = set(), False
+        for name, data in lumps:
+            if name in ("S_START", "SS_START"):
+                inblock = True
+            elif name in ("S_END", "SS_END"):
+                inblock = False
+            elif inblock:
+                spr_names.add(name)
+        # Sprite prefixes the shareware IWAD actually has (its sprite namespace).
+        iw_spr_prefixes, inblock = set(), False
+        for name, off, size in iw.lumps:
+            if name in ("S_START", "SS_START"):
+                inblock = True
+            elif name in ("S_END", "SS_END"):
+                inblock = False
+            elif inblock:
+                iw_spr_prefixes.add(name[:4])
+
+        # A combined mirror lump (TROOA2A8) and our split single (TROOA2) would
+        # both claim rotation 2, which vanilla rejects ("two lumps mapped to it").
+        # Since we build this IWAD, drop each combined lump we've split.
+        def replaced_combined(name):
+            return (len(name) == 8 and name[:6] in overrides
+                    and (name[:4] + name[6:8]) in overrides)
+
         merged, applied = [], set()
         for name, off, size in iw.lumps:
+            if replaced_combined(name):
+                continue
             if name in overrides and name not in applied:
                 merged.append((name, overrides[name]))
                 applied.add(name)
             else:
                 merged.append((name, iw.data[off:off + size]))
+
+        # Split-rotation lumps (e.g. POSSA8) aren't in the shareware IWAD as
+        # separate names - the IWAD has the combined POSSA2A8. Insert ours into
+        # the sprite namespace (before S_END) so they override the combined
+        # lump's mirrored rotation. Only for sprites whose monster exists in
+        # shareware; registered-only monsters stay skipped.
+        new_sprites = [(n, overrides[n]) for n in overrides
+                       if n not in applied and n in spr_names and n[:4] in iw_spr_prefixes]
+        end_idx = next((i for i, (nm, _) in enumerate(merged) if nm in ("S_END", "SS_END")), len(merged))
+        merged[end_idx:end_idx] = new_sprites
+        for n, _ in new_sprites:
+            applied.add(n)
+
         if "DEHACKED" in overrides:
             merged.append(("DEHACKED", overrides["DEHACKED"]))
             applied.add("DEHACKED")

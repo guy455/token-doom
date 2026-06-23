@@ -203,19 +203,36 @@ def build_palette(wad):
     print(f"  PLAYPAL remapped ({len(out)} bytes)")
 
 
+def split_rotations(name):
+    """Doom packs mirror-image angles into one 8-char lump (e.g. TROOA2A8 =
+    rotation 2 plus a flipped rotation 8). The engine flips the shared lump for
+    the high angle, which would flip our baked text too. Return the two single-
+    rotation targets [(lumpname, flipped), ...] so we can bake non-mirrored text
+    on each. Single 6-char lumps (one angle, never mirrored) return as-is."""
+    if len(name) == 8:
+        base = name[:4]
+        return [(base + name[4:6], False), (base + name[6:8], True)]
+    return [(name, False)]
+
+
 def build_labeled(wad, rmap, prefixes, folder, mode="below", fs=14, clear=False):
     bar_h = fs + 1
     n = 0
     for prefix, label in prefixes.items():
         for name in wad.names_with_prefix(prefix):
             raw = wad.read(name)
-            img, lo, to = wadlib.decode_picture(raw, rmap)
-            if mode == "above":
-                img, lo, to = bake_label_above(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
-            else:
-                img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
-            save_sprite(img, name, folder, lo, to)
-            n += 1
+            base_img, base_lo, base_to = wadlib.decode_picture(raw, rmap)
+            for outname, flip in split_rotations(name):
+                img, lo, to = base_img, base_lo, base_to
+                if flip:
+                    img = base_img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+                    lo = base_img.width - base_lo  # mirror the left offset
+                if mode == "above":
+                    img, lo, to = bake_label_above(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
+                else:
+                    img, lo, to = bake_label(img, lo, to, label, bar_h=bar_h, font_size=fs, clear=clear)
+                save_sprite(img, outname, folder, lo, to)
+                n += 1
     return n
 
 
@@ -495,10 +512,26 @@ def build_menu():
         _text_lump(lump, text, 18)
 
 
+def clean_outputs():
+    """Wipe generated PNGs so renamed/split lumps don't leave stale files behind
+    (e.g. the combined TROOA2A8 after we switch to split TROOA2 / TROOA8)."""
+    removed = 0
+    for d in (SPRITES, GRAPHICS):
+        if os.path.isdir(d):
+            for f in os.listdir(d):
+                if f.lower().endswith(".png"):
+                    os.remove(os.path.join(d, f))
+                    removed += 1
+    print(f"  cleaned {removed} stale PNGs")
+
+
 def main():
     print("Loading WAD:", WAD_PATH)
     wad = wadlib.WAD(WAD_PATH)
     rmap = pal.remap_base(wadlib.base_palette(wad))
+
+    print("Cleaning:")
+    clean_outputs()
 
     print("Palette:")
     build_palette(wad)

@@ -228,12 +228,12 @@
       (async function () {
         try {
           Module.setStatus("downloading game.");
-          const [iw, pw] = await Promise.all([
-            fetch("doom1.wad").then((r) => r.arrayBuffer()),
-            fetch("token-doom.wad").then((r) => r.arrayBuffer()),
-          ]);
-          userFileDict["doom1.wad"] = ["i", new Uint8Array(iw)];
-          userFileDict["token-doom.wad"] = ["p", new Uint8Array(pw)];
+          // One merged IWAD (shareware E1 + our overrides). Not a PWAD overlay:
+          // our mirror-split sprites would collide with the shareware IWAD's
+          // combined rotation lumps (PrBoom rejects two lumps per rotation), so
+          // the combined lumps are dropped inside the merged IWAD instead.
+          const iw = await fetch("token-doom.wad").then((r) => r.arrayBuffer());
+          userFileDict["token-doom.wad"] = ["i", new Uint8Array(iw)];
           playButton.disabled = false;
           playButton.textContent = "play";
           Module.setStatus("");
