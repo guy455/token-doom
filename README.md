@@ -21,13 +21,13 @@ open source, runs in your browser. Go shoot something.
 
 ![Token DOOM gameplay](docs/gameplay-3.png?v=2)
 
-## Enemies
+## Hostile entities
 
-Everything in here wants you dead.
+Every one of them wants to wreck your environment.
 
 ![The Token DOOM bestiary](docs/enemies.png?v=2)
 
-## Weapons
+## Loadout
 
 Pick your tool.
 
