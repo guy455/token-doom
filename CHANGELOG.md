@@ -9,6 +9,7 @@
   labeled on the gun.
 - HUD relabeled: TOKENS, POSTURE, TOOLS, TRUST.
 - Difficulty levels renamed as access levels: more access, more danger.
+- Health, armor, and ammo pickups carry Token-flavored messages.
 - Player face is the Token logo: grins on a pickup, reddens on a rampage, wears
   shades in god mode, and darkens and strains as your posture drops.
 - Name tags read correctly from every angle (mirror-shared sprite rotations are
