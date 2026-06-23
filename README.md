@@ -1,54 +1,47 @@
 # Token DOOM
 
-The risks Token hunts, turned into things you can shoot.
+I reskinned DOOM's first episode. The demons are security threats (rogue agents,
+exposed secrets, shadow AI), the guns got renamed, the whole place is painted
+green, and the marine's face is a little logo that grins, panics, and falls apart
+as you take a beating.
 
-It's DOOM Episode 1, recolored Token green, with every monster renamed after a
-threat we kill for real: non-human identities, exposed secrets, rogue AI agents,
-shadow AI, privilege escalation. The weapons are Token capabilities. The player's
-face is the Token logo, and it cracks as your health drops.
+A fun open-source side project. Play it in your browser, no install.
 
-## Play it now
+**[Play Token DOOM](https://guy455.github.io/token-doom/)**
 
-**[Play Token DOOM in your browser](https://guy455.github.io/token-doom/)**
-
-No install, no download. Mouse aims, WASD moves, click fires, sound on. Runs in
-any modern browser.
-
-![Title](docs/title.png?v=2)
+![Token DOOM title screen](docs/title.png?v=2)
 
 ## Screenshots
 
-![Facing an Exposed Secrets enemy with the Secret Scanner](docs/gameplay-1.png?v=2)
+![Token DOOM gameplay](docs/gameplay-1.png?v=2)
 
-![Clearing a room with the Auto Remediator](docs/gameplay-2.png?v=2)
+![Token DOOM gameplay](docs/gameplay-2.png?v=2)
 
-![Out in the open, Token green everywhere](docs/gameplay-3.png?v=2)
+![Token DOOM gameplay](docs/gameplay-3.png?v=2)
 
 ## Enemies
 
-The risks Token hunts, recolored and renamed. Their names float over their heads
-in-game.
+Everything in here wants you dead.
 
-![Enemies](docs/enemies.png?v=2)
+![The Token DOOM bestiary](docs/enemies.png?v=2)
 
 ## Weapons
 
-Token capabilities, labeled right on the gun.
+Pick your tool.
 
-![Weapons](docs/weapons.png?v=2)
+![The Token DOOM arsenal](docs/weapons.png?v=2)
 
 ## The face
 
-The Token logo, animated: eyes glance around, it grins on a pickup, grimaces
-while firing, and cracks as health drops.
+It does not handle stress well.
 
-![Faces](docs/faces.png?v=2)
+![The animated Token DOOM player face](docs/faces.png?v=2)
 
-## Difficulties
+## Difficulty
 
-Access levels: more access, more danger.
+More access, more danger.
 
-![Difficulties](docs/difficulties.png?v=2)
+![The Token DOOM difficulty levels](docs/difficulties.png?v=2)
 
 ## Cheat codes
 
@@ -60,7 +53,7 @@ Type these during play:
 | `idkfa` | Full Inventory | all weapons, ammo, armor, and keys |
 | `idclev11`–`idclev19` | Change Environment | warp to any Episode 1 level |
 
-## Prefer a native build? Download for desktop
+## Run it on your desktop
 
 Bring your own Doom: drop a `doom.wad` (from a full copy of Doom on Steam or GOG,
 or the free [freedoom1.wad](https://freedoom.github.io)) into the folder, then run
@@ -71,8 +64,9 @@ the launcher.
 
 Latest builds are on the [releases page](https://github.com/guy455/token-doom/releases/latest).
 
-## Legal
+## Credits and legal
 
-GZDoom and PrBoom are GPL. The Token branding and generated art are Token's own.
-The browser version runs on id Software's freely redistributable Doom shareware
-(Episode 1). The desktop downloads ship no Doom game data; you supply your own.
+Built on the GZDoom and PrBoom engines (GPL). The browser version runs on id
+Software's freely redistributable Doom shareware; the desktop builds ship no game
+data, so you bring your own. "Token" and its logo belong to Token Security.
+Everything I built here is open source. Issues and pull requests welcome.
